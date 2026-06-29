@@ -303,18 +303,15 @@
     #titleScreen{position:absolute;z-index:50;inset:0;overflow:hidden;background:#070a11;color:#eee7da;
       transition:opacity .45s,visibility .45s}
     #titleScreen.hidden{opacity:0;visibility:hidden;pointer-events:none}
-    #titleScreen:before{content:"";position:absolute;inset:-3%;background:
+    #titleScreen:before{content:"";position:absolute;z-index:0;left:-40%;top:-4%;width:180%;height:108%;background:
       linear-gradient(90deg,#080a11e8 0 28%,#080a1170 56%,#080a11c8 100%),
-      url("assets/morrow-creek-night.png") center/cover no-repeat;animation:titleDrift 24s ease-in-out infinite alternate}
+      url("assets/title-morrow-creek-street.png") center/cover no-repeat;
+      animation:titleStreetPan 90s ease-in-out infinite alternate;will-change:transform}
     #titleScreen:after{content:"";position:absolute;inset:0;background:
       linear-gradient(180deg,#0007,transparent 28%,#03050bcc 100%),
       radial-gradient(circle at 68% 48%,#d6845d1c,transparent 35%);pointer-events:none}
-    .title-cafe{position:absolute;z-index:1;right:-4%;bottom:-7%;width:72%;height:77%;
-      background:url("assets/cafe-rear-wide.png") center bottom/cover no-repeat;
-      clip-path:polygon(8% 12%,100% 0,100% 100%,0 100%);filter:brightness(.55) saturate(.78);
-      mask-image:linear-gradient(90deg,transparent,#000 18%)}
-    .title-panel{position:absolute;z-index:3;left:6%;top:12%;width:440px}
-    .title-logo{width:430px;height:190px;margin:0 0 22px -34px;display:flex;align-items:center}
+    .title-panel{position:absolute;z-index:3;left:6%;top:25%;width:440px}
+    .title-logo{position:absolute;z-index:3;right:4%;top:8%;width:min(44vw,560px);height:210px;display:flex;align-items:center}
     .title-logo img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(8px 10px 4px #020309aa)}
     .title-menu{display:grid;gap:11px;width:282px}
     .title-menu button{position:relative;height:52px;padding:0 18px;text-align:left;background:linear-gradient(90deg,#171722f2,#1717229c);
@@ -324,8 +321,6 @@
     .title-menu button:disabled{opacity:.42;cursor:not-allowed}
     .title-menu button span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:#8e8995;letter-spacing:1px}
     .title-version{margin-top:22px;color:#706d79;font-size:10px;letter-spacing:2px}
-    .title-sign{position:absolute;z-index:3;right:3%;top:15%;width:min(38vw,460px);filter:drop-shadow(10px 13px 8px #020309aa)}
-    .title-sign img{display:block;width:100%;height:auto}
     #continuePicker{position:absolute;z-index:5;inset:0;display:none;place-items:center;background:#05070ddc}
     #continuePicker.show{display:grid;animation:mixPop .2s ease-out}
     .continue-card{width:min(560px,86%);max-height:78%;padding:25px;background:#151522f5;border:3px solid #766455;
@@ -387,7 +382,7 @@
     .option-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:30px;padding-top:18px;border-top:1px solid #3e3948}
     .option-actions button{padding:12px;background:#292534;border:1px solid #8d7a63;cursor:pointer;color:#f1ddbd}
     #loadOverlay{z-index:61}
-    @keyframes titleDrift{from{transform:scale(1.04) translateX(-1%)}to{transform:scale(1.08) translateX(1%)}}
+    @keyframes titleStreetPan{from{transform:translate3d(-8%,0,0) scale(1.02)}to{transform:translate3d(8%,0,0) scale(1.04)}}
     #titleScreen+#world{}
     body.title-options #optionsOverlay{z-index:60}
     #loadingScreen{position:absolute;z-index:100;inset:0;display:grid;place-items:center;background:#060810;color:#e8dfd2;
@@ -442,14 +437,12 @@
       .actor,.actor.active,.actor.dim,.actor.entering,.actor.exiting{filter:none!important;transition:opacity .2s,transform .22s}
       .portrait{will-change:auto}
       #dialogueBubble{animation:none;box-shadow:5px 5px #05060b}
-      .title-panel{left:4%;top:4%;width:470px}
-      .title-logo{width:285px;height:105px;margin:0 0 8px -16px}
+      .title-panel{left:4%;top:14%;width:470px}
+      .title-logo{right:2%;top:5%;width:300px;height:112px}
       .title-menu{width:440px;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 11px}
       .title-menu button{height:45px;padding:0 12px;border-left-width:4px;letter-spacing:2px;font-size:13px}
       .title-menu button span{right:8px;font-size:8px}
       .title-version{margin-top:11px}
-      .title-cafe{right:-7%;bottom:-15%;width:64%;height:84%}
-      .title-sign{right:1.5%;top:9%;width:300px}
 
       #cgGallery{padding:14px 16px}
       .cg-head{gap:10px;padding-bottom:8px}
@@ -536,9 +529,8 @@
     <div class="loading-track"><div id="loadingBar"></div></div><div id="loadingText">LOADING 0%</div>
   </div></section>
   <section id="titleScreen">
-    <div class="title-cafe"></div>
+    <div class="title-logo"><img src="assets/smokemoke-logo.png" alt="(s)mokeMoke — Midnight Shisha Cafe"></div>
     <div class="title-panel">
-      <div class="title-logo"><img src="assets/smokemoke-logo.png" alt="(s)mokeMoke — Midnight Shisha Cafe"></div>
       <div class="title-menu">
         <button id="titleNewBtn">はじめから</button>
         <button id="titleContinueBtn">つづきから</button>
@@ -547,7 +539,6 @@
       </div>
       <div class="title-version">Ver. 0.9.0</div>
     </div>
-    <div class="title-sign" aria-hidden="true"><img src="assets/title-shop-sign.png" alt=""></div>
     <div id="continuePicker">
       <div class="continue-card">
         <h2>どの日から再開しますか？</h2>
