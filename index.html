@@ -2741,34 +2741,53 @@ function installMobileFastTap(){
   },{capture:true});
 }
 function installTouchRanges(){
-  if(!isMobilePerfMode()||!("PointerEvent" in window))return;
+  if(!isMobilePerfMode())return;
   document.querySelectorAll("input[type='range']").forEach(range=>{
-    const updateFromPointer=event=>{
+    const updateFromClientX=clientX=>{
       const rect=range.getBoundingClientRect();
       if(!rect.width)return;
-      const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width));
+      const ratio=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
       const min=Number(range.min)||0,max=Number(range.max)||100,step=Number(range.step)||1;
-      range.value=String(Math.round((min+(max-min)*ratio)/step)*step);
+      const stepped=min+Math.round(((max-min)*ratio)/step)*step;
+      range.value=String(Math.max(min,Math.min(max,stepped)));
       range.dispatchEvent(new Event("input",{bubbles:true}));
     };
-    range.addEventListener("pointerdown",event=>{
-      if(event.pointerType==="mouse")return;
-      range.setPointerCapture?.(event.pointerId);
-      updateFromPointer(event);
+    if("PointerEvent" in window){
+      range.addEventListener("pointerdown",event=>{
+        if(event.pointerType==="mouse")return;
+        range.dataset.touchDragging="true";
+        try{range.setPointerCapture(event.pointerId)}catch{}
+        updateFromClientX(event.clientX);
+        event.preventDefault();
+      });
+      range.addEventListener("pointermove",event=>{
+        if(event.pointerType==="mouse"||range.dataset.touchDragging!=="true")return;
+        updateFromClientX(event.clientX);
+        event.preventDefault();
+      });
+      const finishPointer=event=>{
+        if(event.pointerType==="mouse"||range.dataset.touchDragging!=="true")return;
+        updateFromClientX(event.clientX);
+        delete range.dataset.touchDragging;
+        range.dispatchEvent(new Event("change",{bubbles:true}));
+        try{range.releasePointerCapture(event.pointerId)}catch{}
+        event.preventDefault();
+      };
+      range.addEventListener("pointerup",finishPointer);
+      range.addEventListener("pointercancel",()=>{delete range.dataset.touchDragging});
+    }
+    const updateFromTouch=event=>{
+      const touch=event.touches[0]||event.changedTouches[0];
+      if(!touch)return;
+      updateFromClientX(touch.clientX);
       event.preventDefault();
-    });
-    range.addEventListener("pointermove",event=>{
-      if(event.pointerType==="mouse"||!range.hasPointerCapture?.(event.pointerId))return;
-      updateFromPointer(event);
-      event.preventDefault();
-    });
-    range.addEventListener("pointerup",event=>{
-      if(event.pointerType==="mouse")return;
-      updateFromPointer(event);
+    };
+    range.addEventListener("touchstart",updateFromTouch,{passive:false});
+    range.addEventListener("touchmove",updateFromTouch,{passive:false});
+    range.addEventListener("touchend",event=>{
+      updateFromTouch(event);
       range.dispatchEvent(new Event("change",{bubbles:true}));
-      range.releasePointerCapture?.(event.pointerId);
-      event.preventDefault();
-    });
+    },{passive:false});
   });
 }
 
