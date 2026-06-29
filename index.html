@@ -494,12 +494,11 @@
       .selected-list{display:none}
       .ingredients{gap:5px;padding:0 6px 13px;margin-bottom:5px}
       #bases{grid-template-columns:repeat(3,minmax(68px,1fr))}
-      #accents{grid-template-columns:repeat(8,minmax(42px,1fr));row-gap:0;margin-bottom:0;align-content:end}
-      #accents .ingredient:nth-child(n){grid-column:auto}
+      #accents{grid-template-columns:repeat(5,minmax(54px,1fr));row-gap:13px;margin-bottom:0;align-content:start;
+        min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:thin}
       .ingredient{font-size:10px;padding:1px}
       .ingredient:before{width:58px;height:49px;margin-bottom:0}
-      #accents .ingredient{font-size:9px}
-      #accents .ingredient:before{width:40px;height:36px}
+      #accents .ingredient:before{width:48px;height:42px}
       .ingredient.locked:before{width:38px!important;height:38px!important;font-size:20px}
       .ingredient.selected{transform:translateY(-4px)}
       .ingredient.selected:after{bottom:-10px}
@@ -2782,6 +2781,7 @@ $("endingSkip").onclick=()=>{
 $("endingTitle").onclick=()=>{playSE("cancel",.3);$("endingFast").dataset.fast="false";$("endingScroll").style.transform="";returnToTitle()};
 
 let suppressNativeClickUntil=0;
+let mobileTapPointer=null;
 function isInteractiveTapTarget(target){
   return target.closest("button,input,select,textarea,a,[role='button']");
 }
@@ -2790,6 +2790,14 @@ function isStoryAdvanceTapTarget(target){
 }
 function installMobileFastTap(){
   if(!isMobilePerfMode()||!("PointerEvent" in window))return;
+  document.addEventListener("pointerdown",event=>{
+    if(event.pointerType==="mouse")return;
+    mobileTapPointer={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
+  },true);
+  document.addEventListener("pointermove",event=>{
+    if(!mobileTapPointer||event.pointerId!==mobileTapPointer.id)return;
+    if(Math.hypot(event.clientX-mobileTapPointer.x,event.clientY-mobileTapPointer.y)>10)mobileTapPointer.moved=true;
+  },true);
   document.addEventListener("click",event=>{
     if(event.isTrusted&&performance.now()<suppressNativeClickUntil){
       event.preventDefault();
@@ -2798,6 +2806,9 @@ function installMobileFastTap(){
   },true);
   document.addEventListener("pointerup",event=>{
     if(event.pointerType==="mouse")return;
+    const wasScroll=mobileTapPointer?.id===event.pointerId&&mobileTapPointer.moved;
+    mobileTapPointer=null;
+    if(wasScroll)return;
     if(event.target.closest("input[type='range']"))return;
     const button=event.target.closest("button");
     if(button&&!button.disabled){
