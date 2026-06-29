@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="(s)mokeMoke">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/covers/coffee-brewing.png">
-  <title>(s)mokeMoke — 12 Nights Prototype</title>
+  <title>(s)mokeMoke — Midnight Shisha Cafe</title>
   <style>
     @font-face{font-family:"SmartFont";src:url("assets/fonts/03SmartFont-P.ttf") format("truetype");font-display:swap}
     :root {
@@ -324,6 +324,12 @@
     .title-menu button:disabled{opacity:.42;cursor:not-allowed}
     .title-menu button span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:#8e8995;letter-spacing:1px}
     .title-version{margin-top:22px;color:#706d79;font-size:10px;letter-spacing:2px}
+    .title-sign{position:absolute;z-index:3;right:7%;top:15%;width:250px;padding:18px 20px;
+      border:1px solid #716250;border-left:5px solid #c48468;background:linear-gradient(100deg,#11131ddd,#17141ac2);
+      box-shadow:9px 11px #03040988;color:#d9cfc1;letter-spacing:3px}
+    .title-sign small{display:block;color:#72bfa9;font-size:9px;letter-spacing:4px}
+    .title-sign strong{display:block;margin:8px 0 7px;color:#efc77b;font-size:17px;line-height:1.35}
+    .title-sign span{display:block;padding-top:8px;border-top:1px solid #554a48;color:#918b92;font-size:9px;line-height:1.8}
     #continuePicker{position:absolute;z-index:5;inset:0;display:none;place-items:center;background:#05070ddc}
     #continuePicker.show{display:grid;animation:mixPop .2s ease-out}
     .continue-card{width:min(560px,86%);max-height:78%;padding:25px;background:#151522f5;border:3px solid #766455;
@@ -447,6 +453,8 @@
       .title-menu button span{right:8px;font-size:8px}
       .title-version{margin-top:11px}
       .title-cafe{right:-7%;bottom:-15%;width:64%;height:84%}
+      .title-sign{right:3%;top:9%;width:215px;padding:12px 14px}
+      .title-sign strong{margin:5px 0;font-size:13px}.title-sign small,.title-sign span{font-size:7px}
 
       #cgGallery{padding:14px 16px}
       .cg-head{gap:10px;padding-bottom:8px}
@@ -542,7 +550,12 @@
         <button id="titleCgBtn">CG閲覧<span id="titleCgCount">0 / 14</span></button>
         <button id="titleOptionsBtn">オプション</button>
       </div>
-      <div class="title-version">12 NIGHTS PROTOTYPE</div>
+      <div class="title-version">Ver. 0.9.0</div>
+    </div>
+    <div class="title-sign" aria-hidden="true">
+      <small>MORROW CREEK</small>
+      <strong>MIDNIGHT<br>SHISHA CAFE</strong>
+      <span>OPEN AFTER MIDNIGHT<br>A PLACE BETWEEN DAY AND DAWN</span>
     </div>
     <div id="continuePicker">
       <div class="continue-card">
