@@ -19,9 +19,9 @@
     }
     *{box-sizing:border-box}
     body{margin:0;background:#05070d;color:var(--ink);font-family:"SmartFont","Yu Gothic","MS Gothic",sans-serif;overflow:hidden}
-    button{font:inherit;color:inherit}
+    button{font:inherit;color:inherit;touch-action:manipulation}
     #game{width:min(100vw,1280px);height:min(100vh,720px);aspect-ratio:16/9;margin:auto;position:relative;overflow:hidden;
-      background:#0b0e18;image-rendering:pixelated}
+      background:#0b0e18;image-rendering:pixelated;touch-action:manipulation}
     #world{position:absolute;z-index:0;inset:-3%;overflow:hidden;transform:translateX(var(--pan-x,0)) scale(var(--zoom,1.025));
       transform-origin:center 54%;transition:transform 1.05s cubic-bezier(.22,.61,.36,1)}
     #sceneRear{position:absolute;z-index:1;inset:0;background:#0b0e18 url("assets/cafe-rear-wide.png") center/auto 100% no-repeat}
@@ -433,8 +433,13 @@
     @media(max-width:800px){#text{font-size:14px}.actor{width:31%}#mix{inset:2%;padding:10px}.mix-grid{grid-template-columns:190px 1fr;gap:8px}
       #dialogueBubble{width:78%;min-width:230px}}
     @media (orientation:landscape) and (max-height:500px){
+      body,button{font-family:"Yu Gothic","Hiragino Kaku Gothic ProN","Meiryo",sans-serif}
       #game{width:100vw;height:100vh;max-width:none;max-height:none;aspect-ratio:auto}
       #ambience,.wisp{display:none}
+      #world{transition:none}
+      .actor,.actor.active,.actor.dim,.actor.entering,.actor.exiting{filter:none!important;transition:opacity .2s,transform .22s}
+      .portrait{will-change:auto}
+      #dialogueBubble{animation:none;box-shadow:5px 5px #05060b}
       .title-panel{left:4%;top:4%;width:470px}
       .title-logo{width:285px;height:105px;margin:0 0 8px -16px}
       .title-menu{width:440px;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 11px}
@@ -1850,7 +1855,7 @@ function maybePlayTypeSE(char){
   playTypewriterSE(.32,{rate:voice.rate,volumeMultiplier:voice.volume});
 }
 function typewriterStepSize(){
-  return isMobilePerfMode()&&baseTypeDelayMs()>0?2:1;
+  return 1;
 }
 function finishLineDisplay(){
   typewriterActive=false;
@@ -2677,6 +2682,40 @@ $("endingSkip").onclick=()=>{
 };
 $("endingTitle").onclick=()=>{playSE("cancel",.3);$("endingFast").dataset.fast="false";$("endingScroll").style.transform="";returnToTitle()};
 
+let suppressNativeClickUntil=0;
+function isInteractiveTapTarget(target){
+  return target.closest("button,input,select,textarea,a,[role='button']");
+}
+function isStoryAdvanceTapTarget(target){
+  return target.closest("#game")&&!target.closest("button,input,select,textarea,#musicPlayer,#mix,#book,#logOverlay,#optionsOverlay,#loadOverlay,#end,#cgGallery,#continuePicker,#dayTransition");
+}
+function installMobileFastTap(){
+  if(!isMobilePerfMode()||!("PointerEvent" in window))return;
+  document.addEventListener("click",event=>{
+    if(event.isTrusted&&performance.now()<suppressNativeClickUntil){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  },true);
+  document.addEventListener("pointerup",event=>{
+    if(event.pointerType==="mouse")return;
+    const button=event.target.closest("button");
+    if(button&&!button.disabled){
+      suppressNativeClickUntil=performance.now()+650;
+      event.preventDefault();
+      button.click();
+      return;
+    }
+    if(isInteractiveTapTarget(event.target))return;
+    if(isStoryAdvanceTapTarget(event.target)){
+      suppressNativeClickUntil=performance.now()+650;
+      event.preventDefault();
+      if(uiHidden){toggleUI(false);return}
+      advanceStory();
+    }
+  },{capture:true});
+}
+
 const preloadedImages=[];
 async function preloadGameImages(){
   const mobileLite=isMobilePerfMode();
@@ -2686,14 +2725,14 @@ async function preloadGameImages(){
   ]);
   document.querySelectorAll("img[src]").forEach(image=>paths.add(image.getAttribute("src")));
   ["rowan","mara","june","reiji","kai","teo","elsie","lector"].forEach(id=>
-    (mobileLite?["neutral","smile"]:["neutral","smile","concern","special"]).forEach(expression=>paths.add(`assets/expressions/${id}-${expression}.png`)));
+    (mobileLite?["neutral"]:["neutral","smile","concern","special"]).forEach(expression=>paths.add(`assets/expressions/${id}-${expression}.png`)));
   if(!mobileLite){
     cgCatalog.forEach(([id])=>paths.add(`assets/stills/${id}.png`));
     Object.values(recipeArt).forEach(file=>paths.add(`assets/recipes/${file}.png`));
+    Object.entries(ingredientData).forEach(([type,data])=>{
+      [...Object.keys(data.bases),...Object.keys(data.accents)].forEach(key=>paths.add(`assets/ingredients/${type}-${key}.png`));
+    });
   }
-  Object.entries(ingredientData).forEach(([type,data])=>{
-    [...Object.keys(data.bases),...Object.keys(data.accents)].forEach(key=>paths.add(`assets/ingredients/${type}-${key}.png`));
-  });
   const list=[...paths],bar=$("loadingBar"),label=$("loadingText");let complete=0;
   const jobs=list.map(src=>new Promise(resolve=>{
     const image=new Image();preloadedImages.push(image);let done=false;
@@ -2708,6 +2747,7 @@ async function preloadGameImages(){
 renderBook();updateAudioOptions();updateContinueUI();updateCgCount();updateSkipUI();
 if(!isMobilePerfMode())loadMusic(randomTrack(),false,false);else updateMusicUI();
 window.addEventListener("pointerdown",ensureMusicStarted,{once:true,capture:true});
+installMobileFastTap();
 preloadGameImages();
 </script>
 </body>
