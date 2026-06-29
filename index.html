@@ -1749,7 +1749,7 @@ function isMobilePerfMode(){
   return mobilePerfQuery.matches||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 let audioCtx=null,masterGain=null,bgmGain=null,seGain=null,musicSource=null,webAudioRoutingReady=false;
-const seSources=new Map();
+const seBuffers=new Map();
 let
   seEnabled=savedAudioSettings.seEnabled??true,bgmEnabled=savedAudioSettings.bgmEnabled??true,
   seVolume=Number.isFinite(savedAudioSettings.seVolume)?savedAudioSettings.seVolume:.75,
@@ -1792,6 +1792,7 @@ const typewriterVoices={
 function playSE(key,volume=.55,options={}){
   const pool=sePools[key];
   if(document.hidden||!seEnabled||!pool)return;
+  if(playWebAudioSE(key,volume,options))return;
   const sound=pool[seVoiceIndexes[key]++%pool.length];
   try{
     sound.pause();
@@ -1803,8 +1804,30 @@ function playSE(key,volume=.55,options={}){
     if("mozPreservesPitch" in sound)sound.mozPreservesPitch=false;
     if("webkitPreservesPitch" in sound)sound.webkitPreservesPitch=false;
   }
-  sound.volume=Math.min(1,volume*(options.volumeMultiplier??1)*(webAudioRoutingReady?1:seVolume));
+  sound.volume=Math.min(1,volume*(options.volumeMultiplier??1)*seVolume);
   sound.play().catch(()=>{});
+}
+function playWebAudioSE(key,volume,options={}){
+  const buffer=seBuffers.get(key);
+  if(!webAudioRoutingReady||!buffer||!audioCtx||!seGain)return false;
+  if(audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
+  const source=audioCtx.createBufferSource(),gain=audioCtx.createGain();
+  source.buffer=buffer;
+  source.playbackRate.value=options.rate&&Number.isFinite(options.rate)?options.rate:1;
+  gain.gain.value=Math.min(1,volume*(options.volumeMultiplier??1));
+  source.connect(gain);gain.connect(seGain);source.start();
+  return true;
+}
+async function loadSeBuffers(){
+  if(!audioCtx)return;
+  await Promise.all(Object.entries(seFiles).map(async([key,file])=>{
+    try{
+      const response=await fetch(`assets/SE/${file}`);
+      if(!response.ok)return;
+      const buffer=await audioCtx.decodeAudioData(await response.arrayBuffer());
+      seBuffers.set(key,buffer);
+    }catch{}
+  }));
 }
 function warmSeCache(){
   Object.values(sePools).flat().forEach(sound=>sound.load());
@@ -1812,6 +1835,7 @@ function warmSeCache(){
 }
 function playTypewriterSE(volume=.32,options={}){
   if(document.hidden||!seEnabled||isMobilePerfMode()||!typeSeVoices.length)return;
+  if(playWebAudioSE("text",volume,options))return;
   const sound=typeSeVoices[typeSeVoiceIndex++%typeSeVoices.length];
   try{
     sound.pause();
@@ -1825,7 +1849,7 @@ function playTypewriterSE(volume=.32,options={}){
   }else{
     sound.playbackRate=1;
   }
-  sound.volume=Math.min(1,volume*(options.volumeMultiplier??1)*(webAudioRoutingReady?1:seVolume));
+  sound.volume=Math.min(1,volume*(options.volumeMultiplier??1)*seVolume);
   sound.play().catch(()=>{});
 }
 function clearTypewriterTimer(){
@@ -1933,14 +1957,9 @@ function initAudio(){
     bgmGain=audioCtx.createGain();bgmGain.gain.value=bgmEnabled?bgmVolume:0;bgmGain.connect(audioCtx.destination);
     seGain=audioCtx.createGain();seGain.gain.value=seEnabled?seVolume:0;seGain.connect(audioCtx.destination);
     musicSource=audioCtx.createMediaElementSource(music);musicSource.connect(bgmGain);
-    Object.values(sePools).flat().forEach(sound=>{
-      const source=audioCtx.createMediaElementSource(sound);source.connect(seGain);seSources.set(sound,source);
-    });
-    typeSeVoices.forEach(sound=>{
-      const source=audioCtx.createMediaElementSource(sound);source.connect(seGain);seSources.set(sound,source);
-    });
     webAudioRoutingReady=true;
     music.volume=1;
+    loadSeBuffers();
     audioCtx.resume().catch(()=>{});
   }catch(error){
     webAudioRoutingReady=false;
