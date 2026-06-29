@@ -280,7 +280,7 @@
     .option-row{display:grid;grid-template-columns:84px 88px 1fr 42px;gap:12px;align-items:center;margin:20px 0}
     .option-row button{padding:8px;border:1px solid #8d7a63;background:#292534;color:#f1ddbd;cursor:pointer}
     .option-row button.muted{color:#9e9296;border-color:#625964;background:#191720}
-    .option-row input{width:100%;accent-color:#d88b79}
+    .option-row input{width:100%;accent-color:#d88b79;touch-action:none}
     #cast.final-cast{inset:4% 4% 10%;gap:0;justify-content:center;overflow:visible}
     #cast.final-cast .actor{flex:0 0 31%;width:31%;height:94%;z-index:1}
     #cast.final-cast .actor.dim{opacity:.56;filter:brightness(.62) drop-shadow(5px 6px #06070c)}
@@ -1758,11 +1758,19 @@ const seFiles={
   bell:"door_bell.mp3",doorOpen:"door_open.mp3",doorClose:"door_close.mp3",chair:"chair.mp3",
   jar:"jar_pick.mp3",cup1:"cup_place_01.mp3",cup2:"cup_place_02.mp3",text:"message_text_01.mp3"
 };
-const sePool=Object.fromEntries(Object.entries(seFiles).map(([key,file])=>[key,new Audio(`assets/SE/${file}`)]));
-const typeSeVoices=Array.from({length:4},()=>{
-  const audio=new Audio(`assets/SE/${seFiles.text}`);
+function createSeVoice(file){
+  const audio=new Audio(`assets/SE/${file}`);
   audio.preload="auto";
+  audio.load();
   return audio;
+}
+const sePools=Object.fromEntries(Object.entries(seFiles).map(([key,file])=>[
+  key,
+  Array.from({length:key==="text"?1:3},()=>createSeVoice(file))
+]));
+const seVoiceIndexes=Object.fromEntries(Object.keys(seFiles).map(key=>[key,0]));
+const typeSeVoices=Array.from({length:4},()=>{
+  return createSeVoice(seFiles.text);
 });
 let typeSeVoiceIndex=0;
 const typewriterVoices={
@@ -1777,8 +1785,13 @@ const typewriterVoices={
   "店主":{rate:.92,variation:.025,volume:.98,delayMult:1.14,seIntervalMult:1.08}
 };
 function playSE(key,volume=.55,options={}){
-  if(document.hidden||!seEnabled||!sePool[key])return;
-  const sound=sePool[key].cloneNode();
+  const pool=sePools[key];
+  if(document.hidden||!seEnabled||!pool)return;
+  const sound=pool[seVoiceIndexes[key]++%pool.length];
+  try{
+    sound.pause();
+    sound.currentTime=0;
+  }catch{}
   if(options.rate&&Number.isFinite(options.rate)){
     sound.playbackRate=options.rate;
     if("preservesPitch" in sound)sound.preservesPitch=false;
@@ -1787,6 +1800,10 @@ function playSE(key,volume=.55,options={}){
   }
   sound.volume=Math.min(1,volume*seVolume*(options.volumeMultiplier??1));
   sound.play().catch(()=>{});
+}
+function warmSeCache(){
+  Object.values(sePools).flat().forEach(sound=>sound.load());
+  typeSeVoices.forEach(sound=>sound.load());
 }
 function playTypewriterSE(volume=.32,options={}){
   if(document.hidden||!seEnabled||isMobilePerfMode()||!typeSeVoices.length)return;
@@ -2608,7 +2625,7 @@ $("optionSeMute").onclick=()=>{seEnabled=!seEnabled;updateAudioOptions();saveAud
 $("optionBgmVolume").oninput=event=>setBgmVolumeValue(event.target.value);
 $("optionBgmVolume").onchange=event=>setBgmVolumeValue(event.target.value);
 $("optionSeVolume").oninput=event=>setSeVolumeValue(event.target.value);
-$("optionSeVolume").onchange=event=>setSeVolumeValue(event.target.value);
+$("optionSeVolume").onchange=event=>{setSeVolumeValue(event.target.value);playSE("select",.45)};
 $("optionTextSpeed").oninput=event=>{
   textSpeed=Number(event.target.value);
   $("optionTextSpeedValue").textContent=typeSpeedLabel(textSpeed);
@@ -2723,6 +2740,37 @@ function installMobileFastTap(){
     }
   },{capture:true});
 }
+function installTouchRanges(){
+  if(!isMobilePerfMode()||!("PointerEvent" in window))return;
+  document.querySelectorAll("input[type='range']").forEach(range=>{
+    const updateFromPointer=event=>{
+      const rect=range.getBoundingClientRect();
+      if(!rect.width)return;
+      const ratio=Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width));
+      const min=Number(range.min)||0,max=Number(range.max)||100,step=Number(range.step)||1;
+      range.value=String(Math.round((min+(max-min)*ratio)/step)*step);
+      range.dispatchEvent(new Event("input",{bubbles:true}));
+    };
+    range.addEventListener("pointerdown",event=>{
+      if(event.pointerType==="mouse")return;
+      range.setPointerCapture?.(event.pointerId);
+      updateFromPointer(event);
+      event.preventDefault();
+    });
+    range.addEventListener("pointermove",event=>{
+      if(event.pointerType==="mouse"||!range.hasPointerCapture?.(event.pointerId))return;
+      updateFromPointer(event);
+      event.preventDefault();
+    });
+    range.addEventListener("pointerup",event=>{
+      if(event.pointerType==="mouse")return;
+      updateFromPointer(event);
+      range.dispatchEvent(new Event("change",{bubbles:true}));
+      range.releasePointerCapture?.(event.pointerId);
+      event.preventDefault();
+    });
+  });
+}
 
 const preloadedImages=[];
 async function preloadGameImages(){
@@ -2755,7 +2803,9 @@ async function preloadGameImages(){
 renderBook();updateAudioOptions();updateContinueUI();updateCgCount();updateSkipUI();
 if(!isMobilePerfMode())loadMusic(randomTrack(),false,false);else updateMusicUI();
 window.addEventListener("pointerdown",ensureMusicStarted,{once:true,capture:true});
+window.addEventListener("pointerdown",warmSeCache,{once:true,capture:true});
 installMobileFastTap();
+installTouchRanges();
 preloadGameImages();
 </script>
 </body>
