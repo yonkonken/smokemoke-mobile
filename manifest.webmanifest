@@ -1,0 +1,19 @@
+{
+  "name": "(s)mokeMoke — Midnight Shisha Cafe",
+  "short_name": "(s)mokeMoke",
+  "description": "深夜だけ開くシーシャカフェを舞台にした、会話と調合のゲーム。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#070913",
+  "theme_color": "#070913",
+  "icons": [
+    {
+      "src": "assets/covers/coffee-brewing.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

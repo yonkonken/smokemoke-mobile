@@ -1,0 +1,2366 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070913">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="(s)mokeMoke">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/covers/coffee-brewing.png">
+  <title>(s)mokeMoke — 12 Nights Prototype</title>
+  <style>
+    @font-face{font-family:"SmartFont";src:url("assets/fonts/03SmartFont-P.ttf") format("truetype");font-display:swap}
+    :root {
+      --ink:#e7e1d5; --muted:#9d9aa7; --night:#0b0e18; --panel:#171725;
+      --wine:#6e2947; --mint:#75c6ae; --gold:#e0b86c; --line:#39354a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#05070d;color:var(--ink);font-family:"SmartFont","Yu Gothic","MS Gothic",sans-serif;overflow:hidden}
+    button{font:inherit;color:inherit}
+    #game{width:min(100vw,1280px);height:min(100vh,720px);aspect-ratio:16/9;margin:auto;position:relative;overflow:hidden;
+      background:#0b0e18;image-rendering:pixelated}
+    #world{position:absolute;z-index:0;inset:-3%;overflow:hidden;transform:translateX(var(--pan-x,0)) scale(var(--zoom,1.025));
+      transform-origin:center 54%;transition:transform 1.05s cubic-bezier(.22,.61,.36,1)}
+    #sceneRear{position:absolute;z-index:1;inset:0;background:#0b0e18 url("assets/cafe-rear-wide.png") center/auto 100% no-repeat}
+    .window{display:none}
+    .counter{display:none}
+    #cast{position:absolute;z-index:4;inset:8% 5% 14%;display:flex;align-items:flex-end;justify-content:center;gap:2px}
+    .actor{width:31%;height:94%;position:relative;filter:drop-shadow(7px 7px #06070c);
+      transition:filter .2s,opacity .45s,transform .48s cubic-bezier(.2,.8,.25,1);will-change:transform}
+    .actor.off{display:none}.actor.dim{opacity:.72;filter:brightness(.72) drop-shadow(7px 7px #06070c)}
+    .actor.active{filter:brightness(1.06) drop-shadow(7px 7px #06070c)}
+    .actor.entering{opacity:0!important;transform:translateY(86px) scale(.97);filter:brightness(.55) drop-shadow(7px 7px #06070c)}
+    .actor.exiting{opacity:0!important;transform:translateY(72px) scale(.96);filter:brightness(.5) drop-shadow(7px 7px #06070c)}
+    .portrait{height:100%;position:relative;background-repeat:no-repeat;background-size:contain;background-position:center bottom;
+      transform-origin:center bottom;animation:breathing var(--breath-period,3.6s) ease-in-out infinite;
+      animation-delay:var(--breath-delay,0s);will-change:transform}
+    .portrait-img{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;image-rendering:pixelated}
+    @keyframes breathing{
+      0%,100%{transform:translateY(var(--lift,0)) scale(var(--body-scale,1)) scaleY(1)}
+      45%{transform:translateY(calc(var(--lift,0) - var(--breath-rise,2px))) scale(var(--body-scale,1)) scaleY(var(--breath-scale,1.012))}
+      62%{transform:translateY(calc(var(--lift,0) - 1px)) scale(var(--body-scale,1)) scaleY(1.006)}
+    }
+    .actor-name{display:none}
+    .rowan{--accent:#d6b778}.rowan .portrait{--body-scale:.88;--lift:5px;--breath-period:4.35s;--breath-delay:-.4s;background-image:url("assets/expressions/rowan-neutral.png")}
+    .mara{--accent:#e27fa9}.mara .portrait{--body-scale:.96;--breath-period:3.75s;--breath-delay:-1.1s;--breath-scale:1.014;background-image:url("assets/expressions/mara-neutral.png")}
+    .june{--accent:#99d0bd}.june .portrait{--body-scale:1.08;--lift:-2px;--breath-period:5.05s;--breath-delay:-2.1s;--breath-rise:1px;background-image:url("assets/expressions/june-neutral.png")}
+    .reiji{--accent:#df4c51}.reiji .portrait{--body-scale:1.3;--lift:0px;--breath-period:5.6s;--breath-delay:-.7s;--breath-scale:1.009;--breath-rise:1px;background-image:url("assets/expressions/reiji-neutral.png")}
+    .kai{--accent:#73d7eb}.kai .portrait{--body-scale:1.01;--breath-period:3.5s;--breath-delay:-1.35s;--breath-scale:1.012;--breath-rise:1px;background-image:url("assets/expressions/kai-neutral.png")}
+    .teo{--accent:#b6a4ff}.teo .portrait{--body-scale:.92;--breath-period:5.8s;--breath-delay:-.8s;--breath-scale:1.001;--breath-rise:0px;background-image:url("assets/expressions/teo-neutral.png")}
+    .elsie{--accent:#e68fc7}.elsie .portrait{--body-scale:.98;--breath-period:4.65s;--breath-delay:-2.4s;--breath-scale:1.01;filter:drop-shadow(0 0 8px #c98acb77);background-image:url("assets/expressions/elsie-neutral.png")}
+    .elsie .portrait.expr-special{--body-scale:.9;--lift:0px}
+    .nessa{--accent:#9bc9ff}.nessa .portrait{--body-scale:1.7;--lift:-68px;--breath-period:5.4s;--breath-delay:-1.7s;--breath-scale:1.009;--breath-rise:1px;background-image:url("assets/expressions/lector-neutral.png")}
+    #foregroundCounter{position:absolute;z-index:6;inset:0;
+      background:url("assets/counter-wide.png") center/auto 100% no-repeat;pointer-events:none}
+    #ambience{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:7}
+    .wisp{position:absolute;bottom:13%;width:10px;height:75px;border-radius:50%;opacity:0;
+      background:linear-gradient(to top,#d9ecf000,rgba(217,236,240,.4),#d9ecf000);filter:blur(3px);animation:wisp 5s ease-in infinite}
+    .wisp:nth-child(1){left:18%;animation-delay:0s}.wisp:nth-child(2){left:48%;animation-delay:1.7s}.wisp:nth-child(3){left:76%;animation-delay:3.2s}
+    @keyframes wisp{0%{opacity:0;transform:translate(0,20px) scale(.5)}25%{opacity:.55}100%{opacity:0;transform:translate(24px,-150px) scale(2)}}
+    #dialogueBubble{--speaker-color:#4a465a;position:absolute;z-index:9;left:50%!important;top:auto!important;bottom:2.5%;transform:translateX(-50%);
+      width:62%;max-width:800px;min-height:17%;background:#0d1018f2;color:var(--ink);border:3px solid #4a465a;
+      border-radius:3px;box-shadow:8px 8px #05060b;padding:14px 22px 18px;cursor:pointer;animation:rise .18s ease-out}
+    #dialogueBubble:after{display:none}
+    #dialogueBubble.barista{background:#161521f3;border-color:#6e2947}
+    #dialogueBubble.narrator{background:#0b0e18f3;border-color:#343145}
+    #game.mixing #dialogueBubble{opacity:0;pointer-events:none;transform:translate(-50%,70px);transition:opacity .16s,transform .2s}
+    #game.entrance-lock #dialogueBubble{opacity:0;pointer-events:none;transform:translate(-50%,32px)}
+    @keyframes rise{from{transform:translate(-50%,45px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+    #dialogueBubble:not(.barista):not(.narrator){border-color:var(--speaker-color)}
+    #speaker{color:var(--speaker-color);font-weight:bold;margin-bottom:6px;min-height:18px}
+    .barista #speaker,.narrator #speaker{color:var(--gold)}
+    #text{font-size:18px;line-height:1.75;white-space:pre-wrap}
+    #advance{position:absolute;right:9px;bottom:5px;color:#8a3d5e;animation:blink 1s step-end infinite}
+    @keyframes blink{50%{opacity:.2}}
+    #utilityBar{position:absolute;z-index:11;right:16px;top:14px;display:flex;gap:8px}
+    .top-button{position:relative;min-width:76px;height:42px;display:grid;grid-template-columns:24px 1fr;align-items:center;gap:7px;
+      padding:5px 10px 5px 8px;background:linear-gradient(180deg,#292536ef,#151622ef);border:1px solid #766455;
+      border-bottom-width:4px;border-radius:4px;color:#e8dfd0;cursor:pointer;box-shadow:0 4px 12px #05060a99;letter-spacing:1px}
+    .top-button:hover{border-color:#d1a86b;color:#ffe4b3;transform:translateY(-1px)}
+    .top-button .tool-icon{width:24px;height:24px;display:grid;place-items:center;border:1px solid #554c5f;background:#0d1019;
+      color:#e0b86c;font-family:"MS Gothic",monospace;font-size:16px;line-height:1}
+    #game.mixing #utilityBar,#game.mixing #bottomTools,#game.mixing #soundtrackBtn{z-index:28}
+    #game.mixing #book,#game.mixing #logOverlay,#game.mixing #optionsOverlay,#game.mixing #loadOverlay{z-index:26}
+    #bottomTools{position:absolute;z-index:11;right:18px;bottom:82px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+    .bottom-tool{width:38px;height:38px;padding:0;display:grid;place-items:center;background:linear-gradient(180deg,#292536ef,#151622ef);
+      border:1px solid #766455;border-bottom-width:4px;border-radius:4px;color:#d9d1c6;cursor:pointer;box-shadow:0 4px 12px #05060a99}
+    .bottom-tool svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .bottom-tool:hover,.bottom-tool.active{color:#f0c87a;border-color:#b58b61;background:#292132e8}
+    #soundtrackBtn{position:absolute;z-index:11;right:18px;bottom:18px;width:54px;height:54px;border-radius:50%;
+      border:2px solid #b58b61;background:#191725e8;color:#f0c87a;font-size:24px;cursor:pointer;
+      box-shadow:0 5px 0 #080810,0 0 18px #d88b6a33}
+    #soundtrackBtn svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    #musicPlayer{position:absolute;z-index:22;right:18px;bottom:82px;width:350px;padding:15px;
+      background:linear-gradient(145deg,#211b29f5,#101621f5);border:3px solid #7a6159;
+      box-shadow:10px 12px #05060a;transform:translateX(390px);opacity:0;pointer-events:none;
+      transition:transform .25s cubic-bezier(.2,.85,.25,1.1),opacity .18s}
+    #musicPlayer.show{transform:none;opacity:1;pointer-events:auto}
+    .music-head{display:flex;gap:14px;align-items:center}.music-cover{width:104px;height:104px;object-fit:cover;
+      image-rendering:pixelated;border:3px solid #3f3a4e;background:#090b12}
+    .music-meta{min-width:0;flex:1}.music-kicker{color:#918a9d;font-size:11px;letter-spacing:2px}
+    #musicTitle{color:#f0c87a;font-size:18px;margin:7px 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #musicArtist{color:#c9c2cd;font-size:13px}.music-close{position:absolute;right:8px;top:6px;border:0;background:none;
+      color:#a9a1b2;font-size:18px;cursor:pointer}.music-progress{display:grid;grid-template-columns:34px 1fr 34px;
+      align-items:center;gap:7px;margin-top:13px;font-size:10px;color:#8d8795}
+    #musicSeek{width:100%;accent-color:#d88b79}.music-controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:9px}
+    .music-controls button{width:42px;height:36px;border:2px solid #4b4658;background:#211f30;color:#e8dfd3;cursor:pointer}
+    .music-controls svg{width:19px;height:19px;display:block;margin:auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .music-controls #musicPlay{width:50px;color:#f0c87a;border-color:#8e6c58}
+    .music-controls button.active{color:#ff879f;border-color:#b94d70;background:#392033}
+    .music-foot{display:flex;align-items:center;gap:8px;margin-top:10px;color:#8f8998;font-size:11px}
+    #musicVolume{width:92px;accent-color:#d88b79}
+    .debug-options{margin-top:24px;padding-top:16px;border-top:1px solid #3e3948}
+    .debug-options h3{margin:0 0 10px;color:#777181;font-size:11px;letter-spacing:3px}
+    #debugDays{display:grid;grid-template-columns:repeat(6,minmax(38px,1fr));gap:6px;max-width:500px}
+    #debugDays button{height:30px;padding:0;border:1px solid #50495e;background:#1b1926;color:#aaa2b2;cursor:pointer;font-size:11px}
+    #debugDays button:hover{color:#f0c87a;border-color:#a97d58}
+    .overlay{position:absolute;z-index:10;inset:0;background:#080a12ee;padding:5%;display:none}
+    .overlay.show{display:block}
+    .modal{height:100%;border:4px solid var(--line);background:#151522;padding:22px;overflow:auto}
+    .modal h2{margin-top:0;color:var(--gold)} .close{float:right;background:#362d43;border:2px solid #6f6681;padding:7px 14px;cursor:pointer}
+    #mix{display:none;position:absolute;z-index:12;inset:4.5% 5%;overflow:hidden;
+      background:linear-gradient(160deg,#251b1a 0 16%,#111722 16% 100%);border:4px solid #826249;
+      padding:18px 22px 22px;box-shadow:0 0 0 5px #171019,15px 17px #05060a}
+    #mix:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;
+      background:repeating-linear-gradient(90deg,transparent 0 63px,#80664a22 64px 65px)}
+    #mix.show{display:block;animation:mixPop .24s cubic-bezier(.2,.85,.25,1.2)}
+    @keyframes mixPop{from{opacity:0;transform:translateY(26px) scale(.94)}to{opacity:1;transform:none}}
+    .mix-header{position:relative;display:grid;grid-template-columns:180px 1fr;gap:14px;align-items:center;margin-bottom:13px}
+    #mix h2{margin:0;color:#f0c87a;letter-spacing:4px;font-size:22px}.order-label{font-size:11px;color:#7ccbbb;letter-spacing:2px}
+    #request{padding:9px 14px;color:#e9e0ce;background:#191d29;border-left:4px solid #75c6ae;box-shadow:inset 0 0 0 1px #34394a}
+    .mix-grid{position:relative;display:grid;grid-template-columns:230px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 142px;
+      gap:12px 16px;height:calc(100% - 58px)}
+    .mix-panel{background:#151925e8;border:2px solid #3e4352;padding:13px;box-shadow:inset 0 0 25px #070912}
+    .mix-panel:nth-child(1){grid-row:1/3}
+    .mix-panel:nth-child(2){grid-column:2;grid-row:1;overflow:hidden}
+    .mix-panel:nth-child(3){grid-column:2;grid-row:2;display:grid;grid-template-columns:minmax(0,1fr) 220px;
+      grid-template-rows:auto 1fr;column-gap:18px;align-items:center}
+    .mix-panel:nth-child(3)>h3{grid-column:1/3;margin:0}
+    .mix-panel:nth-child(3) #gauges{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:0 18px}
+    .mix-panel:nth-child(3) #tags{grid-column:2;grid-row:2;margin:0;align-self:start}
+    .mix-panel:nth-child(3) #serve{grid-column:2;grid-row:2;align-self:end;margin:0}
+    .mix-panel h3{margin:4px 0 8px;color:#d6b778;font-size:14px;letter-spacing:1px}
+    .ingredients{position:relative;display:grid;align-items:end;gap:8px;padding:2px 10px 18px;margin-bottom:10px;
+      background:linear-gradient(to bottom,transparent calc(100% - 17px),#8b5b35 calc(100% - 17px),#3e241a 100%);
+      box-shadow:0 8px 0 #160f12,0 12px 18px #05060aaa}
+    #bases{grid-template-columns:repeat(3,minmax(78px,1fr))}
+    #accents{grid-template-columns:repeat(5,minmax(68px,1fr));row-gap:28px;
+      background:
+        linear-gradient(to bottom,transparent calc(50% - 11px),#8b5b35 calc(50% - 11px),#3e241a calc(50% + 6px),transparent calc(50% + 7px)),
+        linear-gradient(to bottom,transparent calc(100% - 17px),#8b5b35 calc(100% - 17px),#3e241a 100%)}
+    #accents .ingredient:nth-child(6){grid-column:2}
+    #accents .ingredient:nth-child(7){grid-column:3}
+    #accents .ingredient:nth-child(8){grid-column:4}
+    .ingredient{position:relative;min-width:0;background:transparent;border:0;padding:3px 2px 5px;color:#a9a5ae;
+      text-align:center;cursor:pointer;box-shadow:none;transition:transform .14s,filter .14s,color .14s}
+    .ingredient:before{content:"";display:block;width:76px;height:68px;margin:0 auto 2px;background-image:var(--icon-sheet);
+      background-repeat:no-repeat;background-size:contain;background-position:center;image-rendering:pixelated}
+    .ingredient:hover{transform:translateY(-5px);filter:brightness(1.14);color:#f0dfbf}
+    .ingredient.selected{transform:translateY(-8px);color:#b8f0df;filter:drop-shadow(0 0 7px #75c6ae) brightness(1.12)}
+    .ingredient.selected:after{content:"◆";position:absolute;left:50%;bottom:-15px;transform:translateX(-50%);color:#75c6ae;
+      font-size:11px;text-shadow:0 0 7px #75c6ae}
+    .ingredient:disabled{opacity:.28;cursor:not-allowed;filter:grayscale(.5)}
+    .ingredient:disabled:hover{transform:none}
+    #accents .ingredient:before{width:62px;height:56px}
+    .ingredient.locked{color:#6f6b78}
+    .ingredient.locked:before{content:"?";background:none;border:2px dashed #514b5c;border-radius:50%;display:grid;
+      place-items:center;color:#756d82;font-size:28px;width:50px!important;height:50px!important}
+    #modeIcon{width:52px;height:52px;display:grid;place-items:center;margin-right:9px;border:2px solid #70583f;
+      background:#0d111b;color:#e0b86c;font-size:29px;box-shadow:inset 0 0 15px #000}
+    #modeIcon:before{content:"☕"}
+    #mix.shisha #modeIcon:before{content:"";width:44px;height:44px;background:url("assets/menu-sheet-transparent.png") 75% 50%/500% auto no-repeat}
+    .selected-list{min-height:34px;color:var(--mint);font-size:14px;text-align:center}
+    #selectedSlots{display:flex;gap:6px;justify-content:center;margin:8px 0 10px}
+    .mix-slot{width:54px;height:46px;border:2px dashed #596071;background:#0b0e18;color:#9299a9;
+      display:grid;place-items:center;font-size:11px;text-align:center;padding:2px}
+    .mix-slot.filled{border-style:solid;border-color:#75c6ae;color:#d9f6ed;background:#17302e}
+    #productPreview{width:190px;height:190px;margin:4px auto 8px;border:2px solid #4b5365;background:#0b0e18;
+      background-image:url("assets/menu-sheet-transparent.png");background-repeat:no-repeat;background-size:500% auto;
+      opacity:.18;transition:opacity .2s;position:relative}
+    #productPreview.ready{opacity:1}
+    #productPreview.unknown{opacity:1;background-image:none!important;display:grid;place-items:center}
+    #productPreview.unknown:before{content:"?";font-size:82px;color:#d6b778;text-shadow:0 0 16px #d6b77866}
+    #productPreview.ready:after{content:"";position:absolute;left:50%;top:15%;width:18px;height:80px;border-radius:50%;
+      background:rgba(225,235,240,.22);filter:blur(6px);animation:previewSteam 2.6s ease-in-out infinite}
+    @keyframes previewSteam{0%{opacity:0;transform:translate(-50%,30px) scale(.5)}45%{opacity:.7}100%{opacity:0;transform:translate(-25px,-38px) scale(1.5)}}
+    #recipeHint{text-align:center;min-height:24px;color:#d6b778;font-size:13px;letter-spacing:1px}
+    .gauge-row{display:grid;grid-template-columns:42px 1fr 18px;gap:6px;align-items:center;margin:5px 0;font-size:13px}
+    .bar{height:10px;background:#292738;border:1px solid #4a465a}.fill{height:100%;background:linear-gradient(90deg,#6e2947,#e0b86c);width:0}
+    #tags{min-height:30px;margin-top:12px}.tag{display:inline-block;border:1px solid #706985;padding:4px 8px;margin-right:5px;color:#cdc5dd}
+    #serve{width:100%;padding:13px;margin-top:12px;background:linear-gradient(#79405b,#4f233c);border:2px solid #d18bab;
+      color:#fff3db;cursor:pointer;letter-spacing:3px;box-shadow:0 5px #291221}
+    #serve:disabled{opacity:.35;cursor:not-allowed}
+    #craftOverlay{display:none;position:absolute;z-index:4;inset:58px 18px 18px;background:#0a0d16f7;border:3px solid #68523f;
+      box-shadow:inset 0 0 70px #131e2b;place-items:center;text-align:center}
+    #craftOverlay.show{display:grid;animation:mixPop .18s ease-out}
+    #craftMachine{position:relative;width:260px;height:250px;margin:auto}
+    .craft-vessel{position:absolute;left:83px;bottom:18px;width:96px;height:78px;border:5px solid #aa8965;
+      border-radius:8px 8px 42px 42px;background:linear-gradient(#293646,#151d29);box-shadow:0 0 25px #75c6ae44}
+    .craft-liquid{position:absolute;left:12px;right:12px;bottom:8px;height:15px;border-radius:50%;
+      background:#d6b778;animation:liquidFill 1.7s ease-in forwards}
+    .craft-pour{position:absolute;left:126px;top:8px;width:10px;height:145px;background:linear-gradient(#75c6ae00,#75c6ae,#e0b86c);
+      transform-origin:top;animation:pour 1.7s ease-in-out forwards}
+    .craft-steam{position:absolute;left:112px;bottom:92px;width:40px;height:80px;border-radius:50%;
+      border-left:5px solid #dceff088;filter:blur(2px);animation:steamRise 1.8s ease-out infinite}
+    @keyframes pour{0%{transform:scaleY(0);opacity:0}15%{transform:scaleY(1);opacity:1}80%{opacity:1}100%{opacity:0}}
+    @keyframes liquidFill{from{height:8px;opacity:.4}to{height:54px;opacity:1}}
+    @keyframes steamRise{from{opacity:0;transform:translateY(25px) scale(.7)}50%{opacity:.8}to{opacity:0;transform:translate(-15px,-35px) scale(1.3)}}
+    #mix.shisha .craft-vessel{left:92px;width:78px;height:92px;border-radius:45% 45% 50% 50%;
+      border-color:#7fb3ba;background:linear-gradient(#304959,#172432)}
+    #mix.shisha .craft-liquid{background:#7561a6;height:44px}
+    #mix.shisha .craft-pour{left:128px;top:20px;width:7px;height:145px;opacity:1;background:linear-gradient(#d8b46c,#6b7786);
+      animation:shishaStem 1.6s ease-in-out forwards}
+    #mix.shisha .craft-pour:before{content:"";position:absolute;left:-17px;top:0;width:38px;height:20px;border:4px solid #b58d52;
+      border-radius:5px;background:#302821;box-shadow:0 -5px 0 #df643c}
+    #mix.shisha .craft-steam{left:122px;bottom:132px;height:100px;border-left-color:#b8a6da;animation-duration:1.35s}
+    @keyframes shishaStem{0%{transform:translateY(14px);opacity:.25}40%,100%{transform:none;opacity:1}}
+    #craftStatus{color:#b9dcd2;letter-spacing:2px;margin-top:4px}
+    .craft-progress{width:280px;height:9px;margin:12px auto;background:#262b38;border:1px solid #596071}
+    .craft-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#75c6ae,#e0b86c)}
+    #craftOverlay.making .craft-progress span{animation:craftProgress 1.9s linear forwards}
+    @keyframes craftProgress{to{width:100%}}
+    #resultStage{display:none}
+    #craftOverlay.finished #makingStage{display:none}#craftOverlay.finished #resultStage{display:block}
+    #resultArt{width:250px;height:230px;margin:0 auto;background:#0b0e18 url("assets/menu-sheet-transparent.png") no-repeat;
+      background-size:500% auto;image-rendering:pixelated}
+    #resultArt.improv{background-image:none;display:grid;place-items:center}
+    #resultArt.improv:after{content:"?";font-size:96px;color:#8b8199}
+    #resultName{font-size:25px;color:#f0c87a;margin:8px 0 16px;letter-spacing:3px}
+    #resultServe{padding:13px 38px;background:linear-gradient(#79405b,#4f233c);border:2px solid #d18bab;
+      color:#fff3db;cursor:pointer;letter-spacing:4px;box-shadow:0 5px #291221}
+    .recipe-card{border:2px solid #343145;padding:12px;margin:10px 0;background:#1c1b2a}
+    .recipe-card strong{color:var(--gold)}.recipe-card small{color:var(--muted)}
+    .recipe-thumb{float:left;width:110px;height:90px;margin-right:14px;background:#0b0e18 url("assets/menu-sheet-transparent.png") no-repeat;
+      background-size:500% auto;image-rendering:pixelated}
+    .recipe-card:after{content:"";display:block;clear:both}
+    #logList{display:flex;flex-direction:column;gap:10px;padding:8px 4px 28px}
+    .log-entry{padding:10px 14px;background:#10131de8;border-left:3px solid #4f4a5e;line-height:1.65}
+    .log-entry strong{display:block;color:#e27fa9;font-size:13px;margin-bottom:3px}
+    .log-entry.narration{color:#aaa5b2;border-left-color:#756b55;font-style:italic}
+    .log-day{padding:12px;text-align:center;color:#e0b86c;letter-spacing:4px;border-bottom:1px solid #39354a}
+    #toast{position:absolute;z-index:20;left:50%;top:12%;transform:translateX(-50%);padding:12px 20px;
+      background:#252238;border:3px solid var(--gold);display:none}
+    #toast.show{display:block;animation:toast 2.4s forwards}
+    @keyframes toast{0%{opacity:0;transform:translate(-50%,-12px)}15%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+    #dayTransition{display:none;position:absolute;z-index:25;inset:0;background:radial-gradient(circle at 70% 75%,#34281f,#0b0d14 68%);
+      overflow:hidden}
+    #dayTransition:before{content:"";position:absolute;inset:-5%;background:url("assets/morrow-creek-night.png") center 48%/cover no-repeat;
+      opacity:.78;animation:nightPan 24s ease-in-out infinite alternate;filter:saturate(.78) brightness(.72)}
+    #dayTransition:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#07091366,#11101a22 58%,#07080dcc);pointer-events:none}
+    #dayTransition.show{display:block}
+    .day-stamp{position:absolute;z-index:2;left:5%;top:6%;text-align:left;animation:dayStampIn .45s ease-out both}
+    #dayTransition strong{display:block;color:#f0c87a;font-size:42px;letter-spacing:8px;text-shadow:4px 4px #08090d}
+    #dayTransition span{display:block;margin-top:8px;color:#a9c7bf;font-size:15px;letter-spacing:3px}
+    #newspaper{position:absolute;z-index:1;left:13%;top:11%;width:68%;height:72%;padding:24px 28px;color:#27231f;
+      background:#d8cfb9 url("assets/newspaper-base.png") center/cover no-repeat;
+      border:2px solid #8b7e68;box-shadow:18px 22px 0 #05070b88;transform:rotate(-4deg);
+      animation:paperIn .72s cubic-bezier(.18,.78,.24,1.08) both}
+    .paper-mast{font-family:Georgia,serif;font-weight:bold;font-size:27px;border-bottom:4px double #3b352e;padding-bottom:7px;text-align:center}
+    .paper-date{text-align:right;font-size:10px;margin:5px 0 10px}.paper-grid{display:grid;grid-template-columns:1.35fr .8fr;gap:18px;height:calc(100% - 70px)}
+    .paper-main h2{font-family:Georgia,\"Yu Mincho\",serif;font-size:25px;line-height:1.25;margin:4px 0 12px}
+    .paper-main p,.paper-side p{font-family:\"Yu Mincho\",serif;font-size:13px;line-height:1.75;text-align:justify}
+    .paper-main,.paper-side{background:#e1d7c5df;padding:10px 12px;border:1px solid #766a58aa}
+    .paper-side{border-left:3px double #6d6252}.paper-side h3{font-family:Georgia,\"Yu Mincho\",serif;margin:5px 0 10px}
+    #dayStartButton{position:absolute;z-index:3;right:5%;bottom:3%;width:150px;height:132px;border:0;background:transparent;cursor:pointer;color:#f4e7cf}
+    #dayStartButton:before{content:\"\";position:absolute;width:115px;height:105px;left:5px;top:0;
+      background:url("assets/open-coffee.png") center/contain no-repeat;filter:drop-shadow(7px 8px 3px #0008)}
+    #dayStartButton:after{content:\"開店する\";position:absolute;right:0;bottom:0;padding:7px 12px;background:#17151bf2;border:1px solid #c8a776;
+      font-size:14px;letter-spacing:2px;box-shadow:4px 4px #05060a}
+    #dayTransition.epilogue{display:grid;place-items:center;text-align:center}
+    #dayTransition.epilogue #newspaper,#dayTransition.epilogue #dayStartButton{display:none}
+    #dayTransition.epilogue .day-stamp{position:static;text-align:center}
+    @keyframes dayStampIn{from{opacity:0;transform:translateX(-35px)}to{opacity:1;transform:none}}
+    @keyframes paperIn{from{opacity:0;transform:translate(110%,35%) rotate(9deg)}to{opacity:1;transform:rotate(-4deg)}}
+    @keyframes nightPan{from{transform:scale(1.06) translate3d(-1.5%,0,0)}to{transform:scale(1.1) translate3d(1.5%,-1%,0)}}
+    .option-row{display:grid;grid-template-columns:84px 88px 1fr 42px;gap:12px;align-items:center;margin:20px 0}
+    .option-row button{padding:8px;border:1px solid #8d7a63;background:#292534;color:#f1ddbd;cursor:pointer}
+    .option-row button.muted{color:#9e9296;border-color:#625964;background:#191720}
+    .option-row input{width:100%;accent-color:#d88b79}
+    #cast.final-cast{inset:4% 4% 10%;gap:0;justify-content:center;overflow:visible}
+    #cast.final-cast .actor{flex:0 0 31%;width:31%;height:94%;z-index:1}
+    #cast.final-cast .actor.dim{opacity:.56;filter:brightness(.62) drop-shadow(5px 6px #06070c)}
+    #cast.final-cast .actor.active{z-index:20;transform:translateY(-7px) scale(1.07);opacity:1}
+    #cast.final-cast .actor.final-enter{animation:finalCastIn .48s cubic-bezier(.2,.8,.25,1)}
+    @keyframes finalCastIn{from{opacity:0;transform:translateY(55px) scale(.94)}to{opacity:1;transform:none}}
+    #dayStartButton:before,#dayStartButton:after{display:none}
+    #dayStartButton img{position:absolute;width:115px;height:105px;left:5px;top:0;object-fit:contain;filter:drop-shadow(7px 8px 3px #0008)}
+    #dayStartButton span{position:absolute;right:0;bottom:0;padding:7px 12px;background:#17151bf2;border:1px solid #c8a776;
+      font-size:14px;letter-spacing:2px;box-shadow:4px 4px #05060a;white-space:nowrap}
+    #stillLayer{position:absolute;z-index:8;inset:0;background:#05070d;opacity:0;pointer-events:none;transition:opacity .5s}
+    #stillLayer.show{opacity:1}
+    #stillImage{width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated}
+    #stillLayer:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 55px #05070d88;pointer-events:none}
+    #game.ui-hidden #dialogueBubble,#game.ui-hidden #utilityBar,#game.ui-hidden #bottomTools,#game.ui-hidden #soundtrackBtn,#game.ui-hidden #musicPlayer,
+    #game.ui-hidden #debugDays,#game.ui-hidden #book,#game.ui-hidden #logOverlay,#game.ui-hidden #optionsOverlay,#game.ui-hidden #loadOverlay,
+    #game.ui-hidden #toast{opacity:0!important;pointer-events:none!important}
+    #game.ui-hidden{cursor:zoom-out}
+    #titleScreen{position:absolute;z-index:50;inset:0;overflow:hidden;background:#070a11;color:#eee7da;
+      transition:opacity .45s,visibility .45s}
+    #titleScreen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+    #titleScreen:before{content:"";position:absolute;inset:-3%;background:
+      linear-gradient(90deg,#080a11e8 0 28%,#080a1170 56%,#080a11c8 100%),
+      url("assets/morrow-creek-night.png") center/cover no-repeat;animation:titleDrift 24s ease-in-out infinite alternate}
+    #titleScreen:after{content:"";position:absolute;inset:0;background:
+      linear-gradient(180deg,#0007,transparent 28%,#03050bcc 100%),
+      radial-gradient(circle at 68% 48%,#d6845d1c,transparent 35%);pointer-events:none}
+    .title-cafe{position:absolute;z-index:1;right:-4%;bottom:-7%;width:72%;height:77%;
+      background:url("assets/cafe-rear-wide.png") center bottom/cover no-repeat;
+      clip-path:polygon(8% 12%,100% 0,100% 100%,0 100%);filter:brightness(.55) saturate(.78);
+      mask-image:linear-gradient(90deg,transparent,#000 18%)}
+    .title-panel{position:absolute;z-index:3;left:6%;top:12%;width:440px}
+    .title-logo{width:430px;height:190px;margin:0 0 22px -34px;display:flex;align-items:center}
+    .title-logo img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(8px 10px 4px #020309aa)}
+    .title-menu{display:grid;gap:11px;width:282px}
+    .title-menu button{position:relative;height:52px;padding:0 18px;text-align:left;background:linear-gradient(90deg,#171722f2,#1717229c);
+      border:1px solid #655b65;border-left:5px solid #a05b68;color:#eee2d2;cursor:pointer;letter-spacing:3px;
+      box-shadow:0 5px 0 #04050a,8px 8px 20px #0008;transition:transform .15s,border-color .15s,color .15s}
+    .title-menu button:hover:not(:disabled){transform:translateX(7px);border-left-color:#f0c87a;color:#ffe5af}
+    .title-menu button:disabled{opacity:.42;cursor:not-allowed}
+    .title-menu button span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:#8e8995;letter-spacing:1px}
+    .title-version{margin-top:22px;color:#706d79;font-size:10px;letter-spacing:2px}
+    #continuePicker{position:absolute;z-index:5;inset:0;display:none;place-items:center;background:#05070ddc}
+    #continuePicker.show{display:grid;animation:mixPop .2s ease-out}
+    .continue-card{width:min(560px,86%);max-height:78%;padding:25px;background:#151522f5;border:3px solid #766455;
+      box-shadow:14px 16px #020309aa;overflow:auto}
+    .continue-card h2{margin:0 0 5px;color:#f0c87a;letter-spacing:4px}.continue-card p{color:#aaa4b1}
+    #continueDayList,#loadDayList{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+    #continueDayList button,#loadDayList button{height:58px;background:#20202def;border:1px solid #595365;border-left:4px solid #75c6ae;
+      color:#eae1d4;cursor:pointer;text-align:left;padding:8px 12px;box-shadow:0 4px #07080e}
+    #continueDayList button:hover,#loadDayList button:hover{border-color:#e0b86c;transform:translateY(-1px)}
+    #continueDayList small,#loadDayList small{display:block;color:#8e8997;margin-top:4px}
+    #continueCancel{padding:9px 18px;background:#30293a;border:1px solid #766d80;cursor:pointer}
+    #saveToast{position:absolute;z-index:27;right:18px;bottom:84px;padding:10px 17px 9px 14px;
+      background:#121822eb;border:1px solid #75c6ae;border-left:5px solid #75c6ae;color:#d9f6ed;
+      box-shadow:7px 8px #05060a;letter-spacing:2px;opacity:0;pointer-events:none;transform:translateX(45px)}
+    #saveToast.show{animation:saveNotice 2.2s ease both}
+    @keyframes saveNotice{0%{opacity:0;transform:translateX(45px)}14%,72%{opacity:1;transform:none}100%{opacity:0;transform:translateX(28px)}}
+    #cgGallery{display:none;position:absolute;z-index:70;inset:0;background:linear-gradient(160deg,#080a12fa,#171421fa);
+      padding:24px 30px;color:#eee4d7}
+    #cgGallery.show{display:flex;flex-direction:column;animation:mixPop .22s ease-out}
+    .cg-head{display:flex;align-items:center;gap:18px;border-bottom:1px solid #4a4351;padding-bottom:13px}
+    .cg-head h2{margin:0;color:#f0c87a;letter-spacing:5px}.cg-head span{color:#8f8998}
+    .cg-close{margin-left:auto;padding:8px 18px;background:#30293a;border:1px solid #766d80;cursor:pointer}
+    .cg-layout{min-height:0;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;padding-top:18px}
+    #cgStage{position:relative;min-width:0;background:#05070d;border:2px solid #4a4554;box-shadow:8px 9px #030409;overflow:hidden;display:grid;place-items:center}
+    #cgStageImage{display:none;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+    #cgStageImage.show{display:block}.cg-stage-empty{color:#77717e;letter-spacing:3px;text-align:center}
+    #cgStageTitle{position:absolute;z-index:2;left:14px;top:12px;padding:7px 11px;background:#080a12dd;color:#f0c87a;letter-spacing:2px}
+    #cgEnlarge{display:none;position:absolute;z-index:3;right:14px;bottom:14px;padding:9px 16px;background:#201d2ae8;border:1px solid #a18467;cursor:pointer}
+    #cgEnlarge.show{display:block}
+    #cgGrid{display:flex;flex-direction:column;gap:12px;padding:2px 9px 28px 2px;overflow-y:auto;overflow-x:hidden}
+    .cg-card{position:relative;flex:0 0 auto;aspect-ratio:16/9;border:2px solid #4a4554;background:#0a0c13;overflow:hidden;cursor:pointer;
+      box-shadow:6px 7px #04050a;text-align:left;padding:0}
+    .cg-card:hover:not(.locked){border-color:#e0b86c;transform:translateY(-2px)}
+    .cg-card img{width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated}
+    .cg-card b{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:#080a12d9;color:#f2e7d7;font-size:12px}
+    .cg-card.locked{cursor:default;background:
+      radial-gradient(circle at 50% 40%,#292536,#11131d 60%),repeating-linear-gradient(135deg,#ffffff08 0 2px,transparent 2px 8px)}
+    .cg-card.locked:before{content:"?";position:absolute;inset:0;display:grid;place-items:center;color:#4e4959;font-size:64px}
+    .cg-card.locked b{color:#716c78;letter-spacing:4px;text-align:center}
+    #cgViewer{display:none;position:absolute;z-index:20;inset:0;background:#03050b;align-items:center;justify-content:center;padding:0;cursor:zoom-out}
+    #cgViewer.show{display:flex}
+    #cgViewerImage{display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;image-rendering:pixelated}
+    #cgViewer .cg-view-title,#cgViewer .cg-view-controls{display:none}
+    #cgProfile{display:none;position:absolute;inset:0;grid-template-columns:42% 58%;background:#10131d;
+      border:2px solid #756354;box-shadow:14px 16px #010208;overflow:hidden}
+    #cgProfile.show{display:grid}#cgProfile img{width:100%;height:100%;object-fit:contain;object-position:center bottom;background:#090c14;image-rendering:pixelated}
+    .cg-profile-copy{padding:32px 38px;overflow:auto;text-align:left}.cg-profile-copy small{color:#78c8b0;letter-spacing:4px}
+    .cg-profile-copy h2{color:#e8c079;margin:8px 0 18px;font-size:30px}.cg-profile-copy p{line-height:1.9;white-space:pre-line;color:#d4ccd0}
+    .cg-section{grid-column:1/-1;margin-top:14px;padding:12px 2px 4px;color:#7fc9b3;border-bottom:1px solid #4a4351;letter-spacing:4px}
+    .cg-card.profile img{object-fit:contain;object-position:center 18%;background:linear-gradient(145deg,#171c27,#090b12)}
+    .cg-card.replay:before{content:"▶";position:absolute;inset:0;display:grid;place-items:center;font-size:58px;color:#e8c079;text-shadow:0 5px #05060a}
+    .cg-view-title{position:absolute;left:20px;top:16px;padding:7px 12px;background:#080a12d9;color:#f0c87a;letter-spacing:2px}
+    .cg-view-controls{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:10px}
+    .cg-view-controls button{padding:9px 18px;background:#171925e9;border:1px solid #807066;cursor:pointer;box-shadow:0 4px #020309}
+    .option-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:30px;padding-top:18px;border-top:1px solid #3e3948}
+    .option-actions button{padding:12px;background:#292534;border:1px solid #8d7a63;cursor:pointer;color:#f1ddbd}
+    #loadOverlay{z-index:61}
+    @keyframes titleDrift{from{transform:scale(1.04) translateX(-1%)}to{transform:scale(1.08) translateX(1%)}}
+    #titleScreen+#world{}
+    body.title-options #optionsOverlay{z-index:60}
+    #loadingScreen{position:absolute;z-index:100;inset:0;display:grid;place-items:center;background:#060810;color:#e8dfd2;
+      transition:opacity .55s ease,visibility .55s}
+    #loadingScreen.done{opacity:0;visibility:hidden;pointer-events:none}
+    .loading-card{width:min(440px,78%);text-align:center}.loading-card img{width:min(330px,85%);height:auto}
+    .loading-track{height:5px;margin-top:25px;background:#272431;overflow:hidden;box-shadow:0 0 0 1px #5c5260}
+    #loadingBar{height:100%;width:0;background:linear-gradient(90deg,#7cc8b2,#e6bc72);transition:width .16s}
+    #loadingText{margin-top:12px;color:#908b98;letter-spacing:3px;font-size:12px}
+    #rotateNotice{display:none;position:absolute;z-index:210;inset:0;padding:28px;background:#090b10f4;color:#eee6d9;
+      place-items:center;text-align:center}
+    .rotate-card{display:grid;place-items:center;gap:16px;max-width:330px}
+    .rotate-phone{width:64px;height:104px;border:4px solid #e2bd78;border-radius:12px;position:relative;animation:rotatePhone 1.8s ease-in-out infinite}
+    .rotate-phone:after{content:"";position:absolute;width:19px;height:4px;border-radius:3px;background:#e2bd78;left:50%;bottom:7px;transform:translateX(-50%)}
+    .rotate-card strong{font-size:20px;color:#f0c87a;letter-spacing:2px}.rotate-card p{margin:0;color:#aaa4af;line-height:1.8}
+    @keyframes rotatePhone{0%,25%{transform:rotate(0)}70%,100%{transform:rotate(90deg)}}
+    #end{display:none;position:absolute;z-index:55;inset:0;overflow:hidden;background:#05070d;color:#eee7dc;--credits-duration:205s}
+    #end.show{display:block;animation:endFade 1.5s ease both}
+    #end:before{content:"";position:absolute;inset:0;background:linear-gradient(#02040a66,#02040acc),
+      url("assets/cafe-rear-wide.png") center/cover;filter:saturate(.55);opacity:.42}
+    #endingScroll{position:absolute;left:0;right:0;top:100%;will-change:transform;text-align:center}
+    #end.rolling #endingScroll{animation:creditsRoll var(--credits-duration,78s) linear forwards}
+    #end.paused #endingScroll{animation-play-state:paused}
+    .ending-opening{min-height:72vh;display:grid;place-items:center;align-content:center;gap:8px}
+    .ending-opening h1{margin:0;color:#ef829e;font-size:42px;letter-spacing:7px}.ending-opening p{color:#aaa5af}
+    .ending-chapter{position:relative;width:min(960px,90%);min-height:610px;margin:0 auto 90px;display:grid;
+      grid-template-columns:42% 58%;align-items:center;background:#0c0e17e8;border:1px solid #514957;box-shadow:15px 18px #02030999;overflow:hidden}
+    .ending-chapter.reverse{grid-template-columns:58% 42%}.ending-chapter.reverse .ending-visual{order:2}
+    .ending-visual{height:100%;min-height:610px;background:#11141e center/cover no-repeat;position:relative;overflow:hidden}
+    .ending-visual.portrait img{position:absolute;left:50%;bottom:-3%;height:96%;max-width:none;transform:translateX(-50%);object-fit:contain;
+      transition:opacity .7s ease,filter .7s ease}
+    .ending-visual.portrait .ending-expression{opacity:0;filter:brightness(1.08)}
+    .ending-chapter.reveal-expression .ending-visual.portrait .ending-neutral{opacity:0}
+    .ending-chapter.reveal-expression .ending-visual.portrait .ending-expression{opacity:1}
+    .ending-copy{padding:42px;text-align:left}.ending-copy small{color:#8bcbb8;letter-spacing:4px}
+    .ending-copy h2{margin:9px 0 20px;color:#e8c079;font-size:30px}.ending-copy p{line-height:2;color:#d2ccd0;white-space:pre-line}
+    .ending-still{width:min(1040px,94%);margin:0 auto 110px}.ending-still img{display:block;width:100%;box-shadow:16px 18px #020309bb}
+    .ending-still p{margin:18px 0;color:#aaa3ad;letter-spacing:2px}
+    .ending-credits{min-height:100vh;display:grid;place-items:center;align-content:center;gap:17px;padding-bottom:20vh}
+    .ending-credits img{width:min(390px,70%)}.ending-credits h2{color:#e8c079;letter-spacing:5px;margin:18px 0 3px}
+    .ending-credits p{margin:0;color:#aaa4ad;line-height:1.9}.ending-credits strong{color:#f0e6d7;font-size:20px;letter-spacing:3px}
+    .ending-controls{position:absolute;z-index:2;right:18px;bottom:18px;display:flex;gap:9px}
+    .ending-controls button{padding:10px 16px;background:#171925e8;border:1px solid #83705e;color:#eee1cf;cursor:pointer}
+    @keyframes endFade{from{opacity:0}to{opacity:1}}
+    @keyframes creditsRoll{from{transform:translateY(0)}to{transform:translateY(calc(-100% + 15vh))}}
+    @media(max-width:800px){#text{font-size:14px}.actor{width:31%}#mix{inset:2%;padding:10px}.mix-grid{grid-template-columns:190px 1fr;gap:8px}
+      #dialogueBubble{width:78%;min-width:230px}}
+    @media (orientation:landscape) and (max-height:500px){
+      #game{width:100vw;height:100vh;max-width:none;max-height:none;aspect-ratio:auto}
+      .title-panel{left:4%;top:4%;width:470px}
+      .title-logo{width:285px;height:105px;margin:0 0 8px -16px}
+      .title-menu{width:440px;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 11px}
+      .title-menu button{height:45px;padding:0 12px;border-left-width:4px;letter-spacing:2px;font-size:13px}
+      .title-menu button span{right:8px;font-size:8px}
+      .title-version{margin-top:11px}
+      .title-cafe{right:-7%;bottom:-15%;width:64%;height:84%}
+
+      #mix{inset:1.5%;padding:7px 10px 9px;border-width:3px}
+      .mix-header{height:43px;grid-template-columns:145px 1fr;gap:8px;margin-bottom:5px}
+      #modeIcon{width:39px;height:39px;margin-right:6px;font-size:22px}
+      #mix.shisha #modeIcon:before{width:34px;height:34px}
+      #mix h2{font-size:17px;letter-spacing:3px}.order-label{font-size:8px}
+      #request{padding:6px 10px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .mix-grid{height:calc(100% - 48px);grid-template-columns:clamp(205px,27vw,230px) minmax(0,1fr);grid-template-rows:52% 48%;gap:6px 9px}
+      .mix-panel{padding:6px 8px;border-width:1px}
+      .mix-panel h3{font-size:11px;margin:1px 0 3px}
+      .mix-panel:nth-child(1){grid-column:1;grid-row:1;min-height:0;overflow:hidden}
+      .mix-panel:nth-child(2){grid-column:2;grid-row:1/3;padding:5px 10px;overflow:hidden;display:grid;
+        grid-template-rows:14px 82px 14px minmax(0,1fr);align-content:stretch}
+      .mix-panel:nth-child(3){grid-column:1;grid-row:2;display:flex;flex-direction:column;min-height:0;overflow:hidden;padding:5px 7px}
+      .mix-panel:nth-child(3)>h3{margin-bottom:2px}
+      #productPreview{width:74px;height:74px;margin:0 auto 1px}
+      #productPreview.unknown:before{font-size:46px}
+      #recipeHint{min-height:14px;font-size:9px;line-height:1.2}
+      #selectedSlots{gap:3px;margin:2px 0}
+      .mix-slot{width:49px;height:27px;border-width:1px;font-size:8px}
+      .selected-list{display:none}
+      .ingredients{gap:5px;padding:0 6px 13px;margin-bottom:5px}
+      #bases{grid-template-columns:repeat(3,minmax(68px,1fr))}
+      #accents{grid-template-columns:repeat(5,minmax(54px,1fr));row-gap:13px;margin-bottom:0;align-content:space-between}
+      .ingredient{font-size:10px;padding:1px}
+      .ingredient:before{width:58px;height:49px;margin-bottom:0}
+      #accents .ingredient:before{width:48px;height:42px}
+      .ingredient.locked:before{width:38px!important;height:38px!important;font-size:20px}
+      .ingredient.selected{transform:translateY(-4px)}
+      .ingredient.selected:after{bottom:-10px}
+      .mix-panel:nth-child(3) #gauges{display:grid;grid-template-columns:1fr;gap:1px}
+      .gauge-row{grid-template-columns:34px minmax(120px,1fr) 18px;gap:5px;margin:2px 0;font-size:10px;line-height:1}
+      .gauge-row .bar{width:100%;min-width:120px;height:11px;border:2px solid #777085;background:#171724;overflow:hidden}
+      .gauge-row .fill{height:100%;min-width:0;background:linear-gradient(90deg,#70c9b0,#e8bb6d);box-shadow:0 0 6px #75c6ae88}
+      .mix-panel:nth-child(3) #tags{min-height:20px;margin:3px 0 1px;white-space:nowrap;overflow:hidden}
+      .tag{padding:2px 5px;margin-right:3px;font-size:9px}
+      .mix-panel:nth-child(3) #serve{height:27px;padding:2px;margin:auto 0 0;font-size:10px;letter-spacing:2px;box-shadow:0 3px #291221}
+      #craftOverlay{inset:47px 8px 8px}
+      #craftOverlay.finished #resultStage{width:min(600px,94%);height:94%;display:grid;grid-template-columns:minmax(220px,1fr) 190px;
+        grid-template-rows:1fr auto;align-items:center;gap:8px 18px;margin:auto}
+      #craftOverlay.finished #resultArt{grid-column:1;grid-row:1/3;width:100%;height:100%;max-height:255px;margin:0;background-size:contain}
+      #craftOverlay.finished #resultName{grid-column:2;grid-row:1;align-self:end;margin:0 0 13px;font-size:18px;line-height:1.4}
+      #craftOverlay.finished #resultServe{grid-column:2;grid-row:2;width:100%;margin:0 0 10px;padding:11px 8px;font-size:12px}
+    }
+    @media (orientation:portrait) and (max-width:700px){
+      #game{width:100vw;height:100dvh;max-width:none;max-height:none;aspect-ratio:auto}
+      #rotateNotice{display:grid}
+    }
+  </style>
+</head>
+<body>
+<main id="game">
+  <section id="rotateNotice" aria-live="polite">
+    <div class="rotate-card"><div class="rotate-phone" aria-hidden="true"></div>
+      <strong>端末を横向きにしてください</strong>
+      <p>このゲームは横画面で遊ぶように作られています。</p>
+    </div>
+  </section>
+  <section id="loadingScreen"><div class="loading-card">
+    <img src="assets/smokemoke-logo.png" alt="(s)mokeMoke">
+    <div class="loading-track"><div id="loadingBar"></div></div><div id="loadingText">LOADING 0%</div>
+  </div></section>
+  <section id="titleScreen">
+    <div class="title-cafe"></div>
+    <div class="title-panel">
+      <div class="title-logo"><img src="assets/smokemoke-logo.png" alt="(s)mokeMoke — Midnight Shisha Cafe"></div>
+      <div class="title-menu">
+        <button id="titleNewBtn">はじめから</button>
+        <button id="titleContinueBtn">つづきから</button>
+        <button id="titleCgBtn">CG閲覧<span id="titleCgCount">0 / 14</span></button>
+        <button id="titleOptionsBtn">オプション</button>
+      </div>
+      <div class="title-version">12 NIGHTS PROTOTYPE</div>
+    </div>
+    <div id="continuePicker">
+      <div class="continue-card">
+        <h2>どの日から再開しますか？</h2>
+        <p>到達済みの日の新聞画面から再開します。</p>
+        <div id="continueDayList"></div>
+        <button id="continueCancel">戻る</button>
+      </div>
+    </div>
+  </section>
+  <section id="cgGallery">
+    <div class="cg-head"><h2>CG GALLERY</h2><span id="cgCount"></span><button id="cgClose" class="cg-close">タイトルへ戻る</button></div>
+    <div class="cg-layout">
+      <div id="cgStage">
+        <div id="cgStageTitle">SELECT A MEMORY</div>
+        <div id="cgStageEmpty" class="cg-stage-empty">右のリストから<br>閲覧する項目を選択してください</div>
+        <img id="cgStageImage" alt="">
+        <div id="cgProfile"></div>
+        <button id="cgEnlarge">拡大表示</button>
+      </div>
+      <div id="cgGrid"></div>
+    </div>
+    <div id="cgViewer">
+      <div id="cgViewerTitle" class="cg-view-title"></div>
+      <img id="cgViewerImage" alt="">
+      <div class="cg-view-controls"><button id="cgPrev">前へ</button><button id="cgBack">一覧へ</button><button id="cgNext">次へ</button></div>
+    </div>
+  </section>
+  <div id="world">
+    <div id="sceneRear"></div>
+    <section id="cast">
+      <div id="rowan" class="actor rowan off"><div class="portrait"></div><div class="actor-name">ロウ</div></div>
+      <div id="mara" class="actor mara off"><div class="portrait"></div><div class="actor-name">マーラ</div></div>
+      <div id="june" class="actor june off"><div class="portrait"></div><div class="actor-name">ジューン</div></div>
+      <div id="reiji" class="actor reiji off"><div class="portrait"></div><div class="actor-name">レイジ</div></div>
+      <div id="kai" class="actor kai off"><div class="portrait"></div><div class="actor-name">カイ</div></div>
+      <div id="teo" class="actor teo off"><div class="portrait"><img class="portrait-img" src="assets/expressions/teo-neutral.png" alt=""></div><div class="actor-name">テオ</div></div>
+      <div id="elsie" class="actor elsie off"><div class="portrait"></div><div class="actor-name">エルシー</div></div>
+      <div id="nessa" class="actor nessa off"><div class="portrait"></div><div class="actor-name">レクター</div></div>
+    </section>
+    <div id="foregroundCounter"></div>
+    <div id="ambience"><i class="wisp"></i><i class="wisp"></i><i class="wisp"></i></div>
+  </div>
+  <div id="stillLayer"><img id="stillImage" alt=""></div>
+  <div id="utilityBar">
+    <button id="optionsBtn" class="top-button"><span class="tool-icon">⚙</span><span>設定</span></button>
+    <button id="logBtn" class="top-button"><span class="tool-icon">≡</span><span>LOG</span></button>
+    <button id="bookBtn" class="top-button"><span class="tool-icon">▤</span><span>レシピ</span></button>
+  </div>
+  <div id="bottomTools">
+    <button id="viewBtn" class="bottom-tool" title="UIを隠す" aria-label="UIを隠す"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/><path d="M4 4l16 16"/></svg></button>
+    <button id="skipBtn" class="bottom-tool" title="既読スキップ" aria-label="既読スキップ"><svg viewBox="0 0 24 24"><path d="M4 6l6 6-6 6M11 6l6 6-6 6M20 6v12"/></svg></button>
+  </div>
+  <button id="soundtrackBtn" title="サウンドトラック" aria-label="サウンドトラック"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 9l10-2"/><ellipse cx="6.5" cy="18" rx="2.5" ry="2"/><ellipse cx="16.5" cy="16" rx="2.5" ry="2"/></svg></button>
+  <section id="musicPlayer" aria-label="サウンドトラックプレイヤー">
+    <button id="musicClose" class="music-close" aria-label="閉じる">×</button>
+    <div class="music-head">
+      <img id="musicCover" class="music-cover" alt="">
+      <div class="music-meta"><div class="music-kicker">NOW PLAYING</div><div id="musicTitle">—</div><div id="musicArtist">—</div></div>
+    </div>
+    <div class="music-progress"><span id="musicNow">0:00</span><input id="musicSeek" type="range" min="0" max="1000" value="0"><span id="musicDuration">0:00</span></div>
+    <div class="music-controls">
+      <button id="musicPrev" title="前の曲" aria-label="前の曲"><svg viewBox="0 0 24 24"><path d="M6 5v14M19 6l-9 6 9 6z"/></svg></button>
+      <button id="musicPlay" title="再生・一時停止" aria-label="再生・一時停止"></button>
+      <button id="musicNext" title="次の曲" aria-label="次の曲"><svg viewBox="0 0 24 24"><path d="M18 5v14M5 6l9 6-9 6z"/></svg></button>
+      <button id="musicFavorite" title="お気に入り" aria-label="お気に入り"><svg viewBox="0 0 24 24"><path d="M12 20S4 15.4 4 9.5A4.5 4.5 0 0 1 12 6.7a4.5 4.5 0 0 1 8 2.8C20 15.4 12 20 12 20z"/></svg></button>
+      <button id="musicFavRepeat" title="お気に入りだけをランダム再生" aria-label="お気に入りリピート"><svg viewBox="0 0 24 24"><path d="M18 7h2v4M20 7l-3-3M6 17H4v-4M4 17l3 3M5 10a7 7 0 0 1 12-4M19 14a7 7 0 0 1-12 4"/><path d="M12 16s-4-2.3-4-5.2A2.2 2.2 0 0 1 12 9.4a2.2 2.2 0 0 1 4 1.4C16 13.7 12 16 12 16z"/></svg></button>
+    </div>
+    <div class="music-foot"><span>VOL</span><input id="musicVolume" type="range" min="0" max="100" value="55"><span id="musicMode">ALL SHUFFLE</span></div>
+  </section>
+  <audio id="musicAudio" preload="auto"></audio>
+  <section id="dialogueBubble"><div id="speaker"></div><div id="text"></div><div id="advance">▼</div></section>
+
+  <section id="mix">
+    <div class="mix-header">
+      <div style="display:flex;align-items:center"><div id="modeIcon"></div><div><div class="order-label">SMOKEMOKE LAB</div><h2>調合</h2></div></div>
+      <div id="request"></div>
+    </div>
+    <div class="mix-grid">
+      <div class="mix-panel">
+        <h3>完成イメージ</h3>
+        <div id="productPreview" aria-label="完成品プレビュー"></div>
+        <div id="recipeHint">素材を選択</div>
+        <div id="selectedSlots">
+          <div class="mix-slot">BASE</div><div class="mix-slot">ACCENT</div><div class="mix-slot">ACCENT</div>
+        </div>
+        <div id="selectedList" class="selected-list">—</div>
+      </div>
+      <div class="mix-panel">
+        <h3 id="baseTitle">ベースを1つ</h3><div id="bases" class="ingredients"></div>
+        <h3>アクセントを2つ</h3><div id="accents" class="ingredients"></div>
+      </div>
+      <div class="mix-panel">
+        <h3>フレーバープロファイル</h3>
+        <div id="gauges"></div><div id="tags"></div>
+        <button id="serve" disabled>作る</button>
+      </div>
+    </div>
+    <div id="craftOverlay">
+      <div id="makingStage">
+        <div id="craftMachine">
+          <div class="craft-pour"></div><div class="craft-steam"></div>
+          <div class="craft-vessel"><div class="craft-liquid"></div></div>
+        </div>
+        <div id="craftStatus">素材を準備しています…</div>
+        <div class="craft-progress"><span></span></div>
+      </div>
+      <div id="resultStage">
+        <div id="resultArt"></div><div id="resultName"></div>
+        <button id="resultServe">提供する</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="book" class="overlay"><div class="modal"><button class="close" id="bookClose">閉じる</button>
+    <h2>レシピ帳</h2><div id="recipeList"></div>
+  </div></section>
+  <section id="logOverlay" class="overlay"><div class="modal"><button class="close" id="logClose">閉じる</button>
+    <h2>会話ログ</h2><div id="logList"></div>
+  </div></section>
+  <section id="optionsOverlay" class="overlay"><div class="modal"><button class="close" id="optionsClose">閉じる</button>
+    <h2>オプション</h2>
+    <div class="option-row"><strong>BGM</strong><button id="optionBgmMute">ON</button><input id="optionBgmVolume" type="range" min="0" max="100" value="55"><span id="optionBgmValue">55</span></div>
+    <div class="option-row"><strong>SE</strong><button id="optionSeMute">ON</button><input id="optionSeVolume" type="range" min="0" max="100" value="75"><span id="optionSeValue">75</span></div>
+    <div class="option-actions"><button id="optionLoadBtn">ロードする</button><button id="optionTitleBtn">タイトル画面に戻る</button></div>
+    <div class="debug-options"><h3>DEBUG — DAY JUMP</h3>
+      <nav id="debugDays" aria-label="デバッグ日付ジャンプ">
+        <button data-day="1">D1</button><button data-day="2">D2</button><button data-day="3">D3</button><button data-day="4">D4</button>
+        <button data-day="5">D5</button><button data-day="6">D6</button><button data-day="7">D7</button><button data-day="8">D8</button>
+        <button data-day="9">D9</button><button data-day="10">D10</button><button data-day="11">D11</button><button data-day="12">D12</button>
+      </nav>
+    </div>
+  </div></section>
+  <section id="loadOverlay" class="overlay"><div class="modal"><button class="close" id="loadClose">閉じる</button>
+    <h2>ロード</h2><p>到達済みの日の新聞画面から再開します。</p><div id="loadDayList"></div>
+  </div></section>
+  <div id="toast"></div>
+  <div id="saveToast">セーブ完了！</div>
+  <div id="dayTransition">
+    <div class="day-stamp"><strong id="dayLabel"></strong><span id="dayTitle"></span></div>
+    <article id="newspaper">
+      <div class="paper-mast">THE MORROW CREEK GAZETTE</div><div class="paper-date" id="paperDate"></div>
+      <div class="paper-grid"><div class="paper-main"><h2 id="paperHeadline"></h2><p id="paperBody"></p></div>
+      <aside class="paper-side"><h3 id="paperSideTitle"></h3><p id="paperSideBody"></p></aside></div>
+    </article>
+    <button id="dayStartButton" aria-label="店を開ける"><img src="assets/open-coffee.png" alt=""><span>開店する</span></button>
+  </div>
+  <section id="end">
+    <div id="endingScroll"></div>
+    <div class="ending-controls"><button id="endingPause">一時停止</button><button id="endingFast">早送り</button><button id="endingSkip">最後へ</button><button id="endingTitle">タイトルへ</button></div>
+  </section>
+</main>
+<script>
+const ingredientData = {
+  drink:{
+    bases:{coffee:["コーヒー",[0,4,0,2],["しゃっきり"]],tea:["紅茶",[0,2,1,1],["すっきり"]],milk:["ミルク",[2,0,0,0],["ほっこり"]]},
+    accents:{honey:["ハチミツ",[3,0,0,0],["ほっこり"]],ginger:["しょうが",[0,0,0,3],["しゃっきり"]],cocoa:["カカオ",[1,2,0,0],["どっしり"]],citrus:["シトラス",[0,0,3,1],["すっきり"]],spice:["スパイス",[0,1,0,3],["どっしり"]],lavender:["ラベンダー",[1,0,0,0],["やすらぎ"],7],peach:["桃",[4,0,1,0],["華やか"],7],cardamom:["カルダモン",[0,1,0,4],["しゃっきり"],7]}
+  },
+  shisha:{
+    bases:{mint:["ミント",[0,1,1,3],["すっきり"]],apple:["ダブルアップル",[3,0,2,0],["華やか"]],vanilla:["バニラ",[3,0,0,0],["ほっこり"]]},
+    accents:{lemon:["レモン",[0,0,3,1],["すっきり"]],cola:["クラフトコーラ",[2,1,1,2],["しゃっきり"]],berry:["ベリー",[3,0,2,0],["華やか"]],rose:["ローズ",[1,0,0,1],["華やか"]],spice:["スパイス",[0,1,0,3],["どっしり"]],lavender:["ラベンダー",[1,0,0,0],["やすらぎ"],7],peach:["桃",[4,0,1,0],["華やか"],7],cardamom:["カルダモン",[0,1,0,4],["しゃっきり"],7]}
+  }
+};
+const recipes = {
+  "drink|milk|ginger,honey":{name:"ゴールデン・ハース",desc:"蜂蜜色の、身体を芯から温めるホットミルク。"},
+  "drink|tea|citrus,honey":{name:"レイニー・ポーチ",desc:"雨音に似合う、穏やかな柑橘の紅茶。"},
+  "drink|coffee|cocoa,honey":{name:"ナイト・レジャー",desc:"夜明けまで働く者の、甘く苦い帳簿。"},
+  "drink|coffee|cocoa,spice":{name:"ブラック・サドル",desc:"苦味と熱を重ねた、重厚な夜のコーヒー。"},
+  "drink|coffee|ginger,spice":{name:"スイッチバック",desc:"山道のように鋭く目を覚ます一杯。"},
+  "drink|tea|ginger,spice":{name:"トレイル・シグナル",desc:"冷えた指先へ合図を送るスパイスティー。"},
+  "shisha|vanilla|berry,rose":{name:"ドリーム・ヴェール",desc:"考えを急がせない、淡い夢の煙。"},
+  "shisha|mint|lemon,rose":{name:"クリア・ウェザー",desc:"雨雲の切れ間のように澄んだ香り。"},
+  "shisha|apple|rose,spice":{name:"レッド・オーチャード",desc:"熟れた果樹園に、薔薇と香辛料を重ねた煙。"},
+  "shisha|mint|berry,spice":{name:"スタティック・ブルーム",desc:"冷たい刺激の奥でベリーが弾ける煙。"},
+  "drink|milk|lavender,peach":{name:"ムーン・ピロー",desc:"桃とラベンダーを沈めた、眠る前のミルク。"},
+  "drink|tea|cardamom,peach":{name:"オービット・ティー",desc:"甘い軌道を香辛料で引き締めた紅茶。"},
+  "drink|coffee|cardamom,honey":{name:"ラスト・ランタン",desc:"最後の一歩を照らす、甘く鋭いコーヒー。"},
+  "shisha|vanilla|lavender,peach":{name:"ゼロ・グラビティ",desc:"重力を忘れるように柔らかな煙。"},
+  "shisha|apple|cardamom,peach":{name:"ストレンジ・オーチャード",desc:"知らない星の果樹園を思わせる香り。"},
+  "shisha|mint|cardamom,lavender":{name:"クワイエット・アラーム",desc:"休息と警戒を同時に告げる静かな煙。"}
+};
+const previewPositions = {
+  "drink|milk|ginger,honey":0,
+  "drink|tea|citrus,honey":1,
+  "drink|coffee|cocoa,honey":2,
+  "drink|coffee|cocoa,spice":2,
+  "drink|coffee|ginger,spice":2,
+  "drink|tea|ginger,spice":1,
+  "shisha|vanilla|berry,rose":3,
+  "shisha|mint|lemon,rose":4,
+  "shisha|apple|rose,spice":3,
+  "shisha|mint|berry,spice":4,
+  "drink|milk|lavender,peach":0,
+  "drink|tea|cardamom,peach":1,
+  "drink|coffee|cardamom,honey":2,
+  "shisha|vanilla|lavender,peach":3,
+  "shisha|apple|cardamom,peach":3,
+  "shisha|mint|cardamom,lavender":4
+};
+const recipeArt = {
+  "drink|milk|ginger,honey":"golden-hearth","drink|tea|citrus,honey":"rainy-porch",
+  "drink|coffee|cocoa,honey":"night-ledger","drink|coffee|cocoa,spice":"black-saddle",
+  "drink|coffee|ginger,spice":"switchback","drink|tea|ginger,spice":"trail-signal",
+  "shisha|vanilla|berry,rose":"dream-veil","shisha|mint|lemon,rose":"clear-weather",
+  "shisha|apple|rose,spice":"red-orchard","shisha|mint|berry,spice":"static-bloom",
+  "drink|milk|lavender,peach":"moon-pillow","drink|tea|cardamom,peach":"orbit-tea",
+  "drink|coffee|cardamom,honey":"last-lantern","shisha|vanilla|lavender,peach":"zero-gravity",
+  "shisha|apple|cardamom,peach":"strange-orchard","shisha|mint|cardamom,lavender":"quiet-alarm"
+};
+const dailyPapers = {
+  1:["May 18, 20XX","新しい時代の始まり","州議会は、人間・獣人以外の希少種へ市民権と法的保護を段階的に認める新法を施行した。行政窓口には申請者が列を作る一方、種族欄など旧制度の名残も課題として残る。","図書館に百年ぶりの返却本","郡立図書館へ、1919年貸出の園芸書が匿名で返却された。延滞金は『良心に任せる』という。"],
+  2:["May 19, 20XX","“サー・ヴァーミリオン”故郷へ","世界王座戦を控える人気レスラーが半年ぶりに帰郷。本人は休養目的とだけ回答した。","大学展示会、追加枠","キャンセル発生により、学生作品を一枠追加募集。締切は明日正午。"],
+  3:["May 20, 20XX","州間旅行者、雨で足止め","長雨で長距離バスの一部が運休。町の宿泊施設は旅行者向けに空室を開放した。","コインランドリーにヘラジカ","乾燥機の温風を気に入った一頭が入口を占拠。けが人はなく、リンゴで誘導された。"],
+  4:["May 21, 20XX","一画面から始まる宇宙","大学展示会の追加枠に、未公開の個人制作ゲームが応募された。詳細は不明。","貨物線、夜間減速","雨量増加により市街地区間を徐行運転。"],
+  5:["May 22, 20XX","完成作は誰のものか","地域芸術欄では、評価の大小にかかわらず作品を完成・公開する意義を特集する。","人気声優、次回作を保留","長命種俳優レクター氏は『次なる仮面を選定中』とコメント。"],
+  6:["May 23, 20XX","守らない時間を守る","高危険度職種の離任者に対し、州は長期休暇と心理支援の拡充を検討。","巨大シナモンロール完売","駅前ベーカリーの創業記念品が開店七分で完売。来月は直径をさらに二インチ拡大する。"],
+  7:["May 24, 20XX","地球文化調査員が来訪","地球圏外からの文化調査員がモロウ・クリークへ到着。飲料文化を重点的に調査するという。","香料便、配送先を誤る","ラベンダー、桃、カルダモンを積んだ小口貨物が一時行方不明。"],
+  8:["May 25, 20XX","王者、試合形式を変更か","サー・ヴァーミリオン陣営が次戦の構成変更を協議。負傷の噂について回答はない。","救急車両を増便","週末興行に備え、会場周辺の交通規制を実施。"],
+  9:["May 26, 20XX","幽霊にも乗車券を","希少種の公共交通利用指針が更新され、非実体乗客向けの座席予約欄が新設された。","町長の猫、三選ならず","商店街の非公式マスコット投票で、現職猫を一票差で郵便局のカラスが破った。"],
+ 10:["May 27, 20XX","試遊会は批評の食卓","学生展示会を前に、市内各所で小規模な試遊会が開催。制作者は『全部は直さない』と語る。","深夜営業店に注目","創作者が集う夜の居場所を地域欄で特集予定。"],
+ 11:["May 28, 20XX","締切前夜、障害報告相次ぐ","展示会提出サーバーが混雑。主催者は早めの書き出しとバックアップを呼びかける。","雨、明朝まで","長く続いた雨は、明け方には上がる見込み。"],
+ 12:["May 29, 20XX","雨上がり、学生展示会閉幕","受賞作だけでなく、小規模な個人作品にも来場者の列。会場には次回作を望む声が残った。","明日の予報：晴れ","二週間ぶりに、傘のいらない朝となる見込み。"]
+};
+const story = [
+ {day:1,title:"雨宿りの常連",time:"22:07"},
+ {n:"",t:"モロウ・クリークでは、五月の雨を信用してはいけない。",time:"22:07"},
+ {n:"",t:"静かに降り始めたかと思えば、五分後には道路を川に変える。\nだから今夜も、看板の明かりをつける。"},
+ {show:["rowan"],n:"ロウ",t:"こんばんは……うわ、思ったより降ってきた。"},
+ {n:"店主",t:"タオル、使う？"},
+ {n:"ロウ",t:"ありがとうございます。尻尾、乾くのに時間かかるんですよね……。"},
+ {n:"店主",t:"注文は？"},
+ {n:"ロウ",t:"いつものを。甘くて、温かいやつ。"},
+ {n:"店主",t:"冷えたね。すぐ温めるよ。"},
+ {n:"",t:"ミルクを温めながら、棚のアクセントを選ぶ。"},
+ {order:{who:"ロウ",type:"drink",request:"甘くて、温かいドリンク",target:"drink|milk|ginger,honey"}},
+ {n:"",t:"湯気の立つカップを、ロウの両手の間へ置いた。"},
+ {n:"ロウ",t:"これです。……ここへ来たって感じがする。",correct:"これです。……ここへ来たって感じがする。",wrong:"いつものとは違うけど……今日は、こういう日なのかも。"},
+ {n:"店主",t:"大学からまっすぐ？"},
+ {n:"ロウ",t:"はい。図書館で作業するつもりだったんですけど、周りが静かすぎて逆に落ち着かなくて。"},
+ {n:"店主",t:"ここも静かだよ。"},
+ {n:"ロウ",t:"ここは、静かでも音があるので。雨とか、食器とか……誰かがいる音。"},
+ {n:"店主",t:"注文しなくても、誰かはいるけど。"},
+ {n:"ロウ",t:"それはさすがに申し訳ないです。場所代だと思って飲んでます。あと、普通に好きです。"},
+ {n:"ロウ",t:"そういえば、この店って温かい飲み物しかないですよね？"},
+ {n:"店主",t:"心が温まってほしいから。冷たいものなら、外にいくらでもある。"},
+ {n:"ロウ",t:"……じゃあ、なんで夜しかやってないんですか？"},
+ {n:"店主",t:"夜になると、居場所がなくなる客が来るから。あなたみたいな。"},
+ {n:"ロウ",t:"僕、そんなに分かりやすいですか。"},
+ {n:"店主",t:"毎週同じ席で、同じ姿勢をしてるくらいには。"},
+ {n:"店主",t:"作業は進んだ？"},
+ {n:"ロウ",t:"……ファイルの整理は。昨日までは、もっとあったんです。"},
+ {n:"店主",t:"消したの？"},
+ {n:"ロウ",t:"似た案をまとめました。惑星開拓、都市運営、宇宙貿易、外交シミュレーション……。"},
+ {n:"店主",t:"全部、同じゲーム？"},
+ {n:"ロウ",t:"最終的には。プレイヤーの行動で銀河全体の経済が変わるようにしたくて。"},
+ {n:"店主",t:"一人で？"},
+ {n:"ロウ",t:"……企画書を書くところまでは、一人でもできますから。"},
+ {show:["rowan","mara"],n:"マーラ",t:"こんばんは。今夜はひどいわね。",still:"day1-rain-window"},
+ {n:"店主",t:"ラジオ帰り？　まず喉を温める？"},
+ {n:"ロウ",t:"マーラさん、ラジオ終わりですか？"},
+ {n:"マーラ",t:"ええ。“新しい時代の始まり”を三回読まされたところ。"},
+ {n:"店主",t:"何か始まった？"},
+ {n:"マーラ",t:"希少種向けの身分証交付。歴史的な第一歩ですって。"},
+ {n:"マーラ",t:"種族欄にサキュバスと書いたら、配偶者の人数まで聞かれたわ。"},
+ {n:"ロウ",t:"それ、必要なんですか？"},
+ {n:"マーラ",t:"必要ないから、夫の名前を十四回書いて返しておいた。"},
+ {n:"マーラ",t:"喉に優しくて、少し酸味のある紅茶をお願い。",clearStill:true},
+ {n:"店主",t:"収録帰りなら、刺激は控えめにしようか。"},
+ {n:"マーラ",t:"ええ。今夜はまだ、自分の声で話したいから。"},
+ {order:{who:"マーラ",type:"drink",request:"喉に優しく、少し酸味のある紅茶",target:"drink|tea|citrus,honey"}},
+ {n:"",t:"柑橘の香りを湯気に乗せ、マーラの前へ差し出す。"},
+ {n:"マーラ",t:"いいわね。雨の音まで少し静かに聞こえる。",correct:"いいわね。雨の音まで少し静かに聞こえる。",wrong:"注文とは違うけれど……これはこれで、話の種にはなるわね。"},
+ {n:"ロウ",t:"ニュース、最近その話ばかりですよね。"},
+ {n:"マーラ",t:"変化の最初は、同じ言葉を何度も読むものよ。そのうち天気予報と同じ扱いになるわ。"},
+ {n:"ロウ",t:"それって、良いことですか？"},
+ {n:"マーラ",t:"たぶんね。権利があることを、毎日祝わなくてよくなるんだから。"},
+ {n:"店主",t:"旦那さんは申請に付き合った？"},
+ {n:"マーラ",t:"入口までは。窓口で喧嘩を始めそうだったから、車で待たせたわ。"},
+ {n:"ロウ",t:"マーラさんより怒る人なんですね。"},
+ {n:"マーラ",t:"私が怒らない分までね。便利でしょう？"},
+ {n:"マーラ",t:"ロウ、それが例のゲーム？"},
+ {n:"ロウ",t:"まだゲームじゃないです。企画というか、設定というか……。"},
+ {n:"マーラ",t:"百二十ページもあるのに？"},
+ {n:"ロウ",t:"世界観を先に固めないと、途中で矛盾するので。"},
+ {n:"店主",t:"動くところは？"},
+ {n:"ロウ",t:"タイトル画面なら。"},
+ {n:"マーラ",t:"立派ね。タイトルだけは完成してる。"},
+ {n:"ロウ",t:"タイトル画面も大事なんですよ。最初に世界の空気を伝える場所なので。"},
+ {n:"マーラ",t:"ええ。だから、その次に何があるか期待する。"},
+ {n:"ロウ",t:"……今は設定資料が読めます。"},
+ {n:"店主",t:"百二十ページ？"},
+ {n:"ロウ",t:"ゲーム内では分割します。全部読ませるつもりじゃないです。本当に。"},
+ {n:"ロウ",t:"……甘くて、ぼんやり考えられるシーシャをお願いします。"},
+ {n:"店主",t:"作業用？"},
+ {n:"ロウ",t:"はい。考えが逃げない程度に、ゆっくりできるものを。"},
+ {order:{who:"ロウ",type:"shisha",request:"甘く、ぼんやり考えられるシーシャ",target:"shisha|vanilla|berry,rose"}},
+ {n:"",t:"新しいボウルを運ぶ。最初の煙が、ロウの丸めた背中を包んだ。"},
+ {n:"ロウ",t:"大学の展示会、今日が締切なんです。",correct:"大学の展示会、今日が締切なんです。煙を見てると……少しだけ話せそうで。",wrong:"大学の展示会、今日が締切なんです。まあ、今さらなんですけど。"},
+ {n:"マーラ",t:"出すの？"},
+ {n:"ロウ",t:"出しません。まだ、いいアイデアがないので。"},
+ {n:"マーラ",t:"同級生は？"},
+ {n:"ロウ",t:"チームで出す人が多いです。もう試遊会もやってて、毎日進捗を投稿してて。"},
+ {n:"店主",t:"見てるんだ。"},
+ {n:"ロウ",t:"見ないほうがいいのに、見ちゃうんです。みんな、自分の作りたいものが分かってるみたいで。"},
+ {n:"マーラ",t:"投稿用の文章くらい、全員それらしく書くわよ。深夜ラジオと同じ。沈黙は編集で消えるもの。"},
+ {n:"マーラ",t:"私は甘くない、頭が澄むものを。"},
+ {n:"店主",t:"ロウの煙とは、反対の方向だね。"},
+ {n:"マーラ",t:"ええ。誰かさんの言い訳が、よく見えるように。"},
+ {order:{who:"マーラ",type:"shisha",request:"甘くなく、頭が澄むシーシャ",target:"shisha|mint|lemon,rose"}},
+ {n:"",t:"ミントの冷たい香りが、甘い煙を押し分けていく。"},
+ {n:"マーラ",t:"“いいアイデア”になったら、次は？",correct:"“いいアイデア”になったら、次は？",wrong:"ずいぶん個性的な煙ね。……で、“いいアイデア”になったら、次は？"},
+ {n:"ロウ",t:"作ります。面白くなかったら直して、それでも駄目なら……別の案を。"},
+ {n:"マーラ",t:"なるほど。だからフォルダだけ増えるのね。"},
+ {n:"ロウ",t:"捨ててるわけじゃないです。良くなるまで保留してるだけで。"},
+ {n:"マーラ",t:"保留箱に百二十ページ。ずいぶん立派なお墓ね。"},
+ {n:"店主",t:"花は何がいい？"},
+ {n:"ロウ",t:"二人とも、ひどくないですか……？"},
+ {show:["rowan","mara","june"],n:"ジューン",t:"こんばんは。悪い、持ち帰りで一杯頼む。"},
+ {n:"店主",t:"急ぎだね。峠へ出る前に、手だけでも温めて。"},
+ {n:"ジューン",t:"苦くて甘いコーヒー。夜明けまで保つやつ。"},
+ {n:"店主",t:"峠へ行くの？"},
+ {n:"ジューン",t:"空港帰りが一組。雨で足止めされる前に送り届けたい。"},
+ {order:{who:"ジューン",type:"drink",request:"苦くて甘い、夜明けまで保つコーヒー",target:"drink|coffee|cocoa,honey"}},
+ {n:"",t:"蓋を閉じたカップを渡す。ジューンは大きな片手で慎重に受け取った。"},
+ {n:"ジューン",t:"助かった。大学前の通りは避けたほうがいいぞ。展示会の搬入車が並び始めてる。",correct:"助かった。大学前の通りは避けたほうがいいぞ。展示会の搬入車が並び始めてる。",wrong:"目は覚めそうだ。大学前の通りは避けたほうがいいぞ。展示会の搬入車が並び始めてる。"},
+ {n:"ロウ",t:"もう準備してるんですか？"},
+ {n:"ジューン",t:"二週間後だろ？　作る連中には、もう二週間しかない。"},
+ {show:["rowan"],n:"",t:"午前0時。展示会の応募受付が終了した。",time:"00:00"},
+ {n:"店主",t:"出さなかったんだね。"},
+ {n:"ロウ",t:"次は、ちゃんと作ってから出します。"},
+ {n:"",t:"雨は、まだ止まない。\nロウのフォルダに、新しいファイルが一つ増えた。\n\nnext_time_final"},
+
+ {day:2,title:"王の帰郷",time:"22:32"},
+ {n:"",t:"翌晩。雨は細くなったが、山から下りてくる風は冷たい。"},
+ {show:["reiji"],n:"レイジ",t:"半年ぶりだな、店主。まだ潰れてなくて安心したぜ。"},
+ {n:"店主",t:"その椅子を置いてくれる客が、ほかにいないからね。"},
+ {n:"レイジ",t:"ハッ。なら、いつものより苦くて重いコーヒーを寄越せ。"},
+ {n:"店主",t:"帰って早々、ずいぶん疲れてるね。"},
+ {n:"レイジ",t:"余計な観察はいい。作れ。"},
+ {order:{who:"レイジ",type:"drink",request:"苦くて重い、スパイス入りのコーヒー",target:"drink|coffee|cocoa,spice"}},
+ {n:"レイジ",t:"悪くねぇ。舌に残るくらいで丁度いい。",correct:"悪くねぇ。舌に残るくらいで丁度いい。",wrong:"変化球か。まあいい、飲めねぇほどじゃない。"},
+ {n:"店主",t:"今回は二週間？"},
+ {n:"レイジ",t:"その予定だ。実家の屋根と、親父の車庫を直す。金を出すと言っても自分でやると聞かねぇ。"},
+ {n:"店主",t:"有名レスラーの帰省にしては地味だね。"},
+ {n:"レイジ",t:"ここでまでスポットライトを浴びてどうする。オレは休みに来たんだ。"},
+ {n:"店主",t:"休む人は、到着した夜に屋根の話をしない。"},
+ {n:"レイジ",t:"……相変わらず口が減らねぇ店主だ。"},
+ {show:["reiji","rowan"],n:"ロウ",t:"こんばんは……って、サー・ヴァーミリオン！？"},
+ {n:"レイジ",t:"リングネームを店で叫ぶな。座れ、尻尾が邪魔だ。"},
+ {n:"ロウ",t:"すみません。去年のタイトル戦、配信で見ました。最後の押さえ込み、すごかったです。"},
+ {n:"レイジ",t:"褒めるなら顔を上げろ。床に言ってもオレには届かねぇ。"},
+ {n:"ロウ",t:"はい。……近くで見ると、本当に大きいですね。"},
+ {n:"レイジ",t:"画面の中で小さくなるような鍛え方はしてねぇからな。"},
+ {n:"レイジ",t:"で、お前は誰だ。店主の新しい従業員じゃねぇだろ。"},
+ {n:"ロウ",t:"ローワン・モリです。みんなにはロウって呼ばれてます。大学でゲームデザインを勉強していて……。"},
+ {n:"レイジ",t:"ロウだな。オレは牙王レイジ。リングの外でまで“サー”を付ける必要はねぇ。"},
+ {n:"ロウ",t:"じゃあ、レイジさんで。……呼び捨ては、まだちょっと無理です。"},
+ {n:"レイジ",t:"好きにしろ。声が小さくて聞こえねぇ方が問題だ。"},
+ {n:"ロウ",t:"は、はい。店主さん、しょうがとスパイスの紅茶をお願いします。"},
+ {n:"店主",t:"落ち着くため？"},
+ {n:"ロウ",t:"できれば、心拍数が普通になるやつを……。"},
+ {order:{who:"ロウ",type:"drink",request:"しょうがとスパイスの温かい紅茶",target:"drink|tea|ginger,spice"}},
+ {n:"ロウ",t:"少し戻ってきました。心臓が。",correct:"少し戻ってきました。心臓が。",wrong:"刺激はありますね。別の意味で目が覚めました。"},
+ {n:"レイジ",t:"お前、昨日からその画面を睨んでるだけか？"},
+ {n:"ロウ",t:"企画を整理してるんです。百二十ページあって……。"},
+ {n:"レイジ",t:"見せろ。",still:"day2-king-low-angle"},
+ {n:"ロウ",t:"えっ、まだ途中で――"},
+ {n:"レイジ",t:"途中だから見せんだろ。完成してから褒める奴だけ欲しいのか？"},
+ {n:"ロウ",t:"プロの人に見せられるようなものじゃないです。"},
+ {n:"レイジ",t:"オレはゲームのプロじゃねぇ。客だ。客一人に説明できねぇ企画を、誰に売る？"},
+ {n:"ロウ",t:"売るとかは、まだ……。"},
+ {n:"レイジ",t:"遊ばせるのも売るうちだ。金だけの話じゃねぇ。時間を払わせるんだからな。"},
+ {n:"店主",t:"レイジは、自分を売るのが上手いから。"},
+ {n:"レイジ",t:"“サー・ヴァーミリオン”は、客が見てぇものを形にした。毛色も、服も、技の名前もだ。"},
+ {n:"ロウ",t:"それって、自分を曲げたことにはならないんですか？"},
+ {n:"レイジ",t:"曲げたんじゃねぇ。届く形にした。誰にも見られず消えるのが、お前の言う本物か？",clearStill:true},
+ {n:"レイジ",t:"次は煙だ。林檎に薔薇、最後に少し噛みつくやつを。"},
+ {order:{who:"レイジ",type:"shisha",request:"林檎と薔薇に、刺激を加えたシーシャ",target:"shisha|apple|rose,spice"}},
+ {n:"レイジ",t:"こいつはいい。甘いだけじゃ、オレの看板にはならねぇ。",correct:"こいつはいい。甘いだけじゃ、オレの看板にはならねぇ。",wrong:"大人しい煙だな。今夜のオレには似合わねぇ。"},
+ {n:"ロウ",t:"ずっとそのキャラクターでいるの、疲れませんか？"},
+ {n:"レイジ",t:"慣れる。衣装と同じだ。長く着てりゃ、脱いだ方が落ち着かなくなる。"},
+ {n:"店主",t:"だから休暇中も指輪まで全部つけてる？"},
+ {n:"レイジ",t:"これは趣味だ。"},
+ {n:"ロウ",t:"そこはキャラクターじゃないんですね……。"},
+ {n:"",t:"レイジが笑って脚を組み替える。\nほんの一瞬、眉間に深い皺が寄った。"},
+ {n:"店主",t:"脚は？"},
+ {n:"レイジ",t:"何でもねぇ。椅子が少し低いだけだ。"},
+ {show:["reiji","rowan","june"],n:"ジューン",t:"こんばんは。大学前で聞いたんだが、展示会にキャンセルが出たそうだ。"},
+ {n:"ジューン",t:"それとレイジ、帰ってたのか。お父さんを今朝、材木店まで乗せたよ。"},
+ {n:"レイジ",t:"親父め。オレが直すと言ってんのに、先に材料を買いやがったな。"},
+ {n:"ジューン",t:"昔から競争相手がいると元気になる人だ。息子でも同じらしい。"},
+ {n:"ロウ",t:"追加募集、あるんですか？"},
+ {n:"ジューン",t:"明日の正午まで。先着じゃなく、短い企画説明で選ぶらしい。"},
+ {n:"レイジ",t:"丁度いい。百二十ページを百二十文字にしろ。"},
+ {n:"ロウ",t:"無茶ですよ。世界観だけでも――"},
+ {n:"ジューン",t:"乗客へ町を説明するとき、最初に州史から話す運転手はいないよ。まず目的地を聞く。"},
+ {n:"レイジ",t:"ほら、地元の運転手でも分かってる。"},
+ {n:"ジューン",t:"“でも”は余計だな、レイジ。"},
+ {n:"ジューン",t:"店主、昨夜と同じ持ち帰りを頼む。"},
+ {order:{who:"ジューン",type:"drink",request:"苦くて甘い、夜明けまで保つコーヒー",target:"drink|coffee|cocoa,honey"}},
+ {n:"ジューン",t:"ありがとう。ロウ、出すだけなら十二時間もいらないぞ。",correct:"ありがとう。ロウ、出すだけなら十二時間もいらないぞ。",wrong:"今夜はこれで走ってみるよ。ロウ、出すだけなら十二時間もいらないぞ。"},
+ {show:["reiji","rowan"],n:"レイジ",t:"二週間で一本作れ。世界を作るな。一個、遊べるもんを作れ。"},
+ {n:"ロウ",t:"……採用されなかったら？"},
+ {n:"レイジ",t:"応募しなかった奴と同じ場所に戻るだけだ。失うもんがあるか？"},
+ {n:"",t:"ロウは申請ページを開いた。\n今夜は、閉じなかった。"},
+
+ {day:3,title:"休暇中",time:"22:19"},
+ {n:"",t:"三日目。雨脚が強まり、ドアベルより先に濡れたスニーカーの音がした。"},
+ {show:["kai"],n:"カイ",t:"こんばんは。雨宿り一名。あと、すぐ動けるくらい強いやつ頼める？"},
+ {n:"店主",t:"初めてだね。濡れた上着はそこへ。強さの前に、味の好みを聞こうか。"},
+ {n:"店主",t:"旅行中？"},
+ {n:"カイ",t:"まあね。行き先未定の、すげー計画的な休暇。"},
+ {n:"店主",t:"入口と非常口を確認するのも観光？"},
+ {n:"カイ",t:"職業病。窓、裏口、死角、それから店主の手元。気にしないで。"},
+ {n:"店主",t:"気にしないのは難しい言い方だね。"},
+ {n:"カイ",t:"あはは、ごめん。警備みたいな仕事してたからさ。今は完全に休み。たぶん。"},
+ {n:"店主",t:"たぶん？"},
+ {n:"カイ",t:"休暇証明書に“緊急時を除く”って書いてある。緊急時の定義は俺が決める。"},
+ {n:"カイ",t:"あ、名乗ってなかった。カイ。東から来た旅行者ってことで。あんたは？"},
+ {n:"店主",t:"店主でいいよ。ここでは、みんなそう呼ぶ。"},
+ {n:"カイ",t:"なるほど。名札もないしね。じゃ、店主。今夜は世話になる。"},
+ {n:"カイ",t:"しょうがとスパイス。コーヒーで、しゃっきりするやつ。"},
+ {order:{who:"カイ",type:"drink",request:"しょうがとスパイスの鋭いコーヒー",target:"drink|coffee|ginger,spice"}},
+ {n:"カイ",t:"うん、これこれ。止まったあと、すぐ走れそう。",correct:"うん、これこれ。止まったあと、すぐ走れそう。",wrong:"予想外だけどアリ。旅って、だいたいこういうもんだし。"},
+ {n:"カイ",t:"……なあ店主。俺、あんたと前に会ったことある？"},
+ {n:"店主",t:"ないと思う。"},
+ {n:"カイ",t:"だよな。なのに、顔を見たはずなのに思い出せない。疲れてんのかな。"},
+ {n:"店主",t:"長旅なら、よくあることだよ。"},
+ {n:"カイ",t:"そういうことにしとく。休暇中に仕事増やしたくないし。"},
+ {show:["kai","rowan"],n:"ロウ",t:"こんばんは。追加枠、通りました。……通っちゃいました。"},
+ {n:"カイ",t:"おめでとうなのか、災難なのか、顔だけじゃ分かんないな。"},
+ {n:"ロウ",t:"えっと……初めまして。ローワンです。ロウで大丈夫です。"},
+ {n:"カイ",t:"カイ。旅行中。警戒しなくていいよ、店主に怪しい奴じゃないか確認されてる途中だから。"},
+ {n:"店主",t:"確認してない。"},
+ {n:"ロウ",t:"じゃあ、怪しいかどうかは保留なんですね。"},
+ {n:"カイ",t:"いいね。会って三十秒で決めつけない奴、俺は好きだよ。"},
+ {n:"ロウ",t:"送信したあと、三時間くらい取り消しボタンを探しました。"},
+ {n:"店主",t:"なかった？"},
+ {n:"ロウ",t:"ありました。でも押したら、昨日の僕に負ける気がして。"},
+ {n:"カイ",t:"昨日の自分と戦ってんの？　面倒な敵だな。生活パターンも全部バレてる。"},
+ {n:"ロウ",t:"両方です。店主さん、昨日の柑橘の紅茶を。"},
+ {order:{who:"ロウ",type:"drink",request:"穏やかで酸味のある紅茶",target:"drink|tea|citrus,honey"}},
+ {n:"ロウ",t:"二週間しかないのに、まだ何も動いてなくて。",correct:"二週間しかないのに、まだ何も動いてなくて。",wrong:"変な注文をしたの、僕でしたっけ……。"},
+ {show:["kai","rowan","mara"],n:"マーラ",t:"“まだ”を数えるより、今夜動かすものを決めたら？"},
+ {n:"ロウ",t:"マーラさん。この人はカイさん、旅行中だそうです。カイさん、マーラさんです。深夜ラジオの。"},
+ {n:"カイ",t:"ああ、さっき車で聞いた声だ。実物の方が少し低いんだな。"},
+ {n:"マーラ",t:"放送では眠そうな人を起こさない高さに調整しているの。マーラ・ベルよ。"},
+ {n:"カイ",t:"カイ。よろしく。……その角、本物か聞くのは失礼？"},
+ {n:"マーラ",t:"本物よ。触るのはもっと失礼。先に聞いた点は評価するわ。"},
+ {n:"カイ",t:"同感。で、何を作るゲーム？　三十秒で。"},
+ {n:"ロウ",t:"複数惑星の政治と経済を扱う宇宙開拓RPGで、種族ごとの文化圏が――"},
+ {n:"カイ",t:"長い。宇宙船は動く？"},
+ {n:"ロウ",t:"……まだです。"},
+ {n:"カイ",t:"じゃ、今日の任務は右に動かす。政治は明日。"},
+ {n:"ロウ",t:"そんな雑に決めていいんですか？"},
+ {n:"カイ",t:"雑じゃない。達成条件が明確。右へ一メートル、入力に反応、壁を抜けない。三つ。"},
+ {n:"ロウ",t:"壁はまだないです。"},
+ {n:"カイ",t:"じゃあ二つ。任務が減った、おめでとう。"},
+ {n:"マーラ",t:"あなた、人を働かせるのに慣れているのね。"},
+ {n:"カイ",t:"逆。働かせないように線を引く方。頑張る奴って、止めないと勝手に壊れるから。"},
+ {n:"店主",t:"自分にも線を引く？"},
+ {n:"カイ",t:"俺は止める側だから、別枠。"},
+ {n:"マーラ",t:"便利な別枠ね。"},
+ {n:"マーラ",t:"私は喉を冷やす煙をお願い。甘くないもの。"},
+ {order:{who:"マーラ",type:"shisha",request:"甘くなく、頭と喉が澄むシーシャ",target:"shisha|mint|lemon,rose"}},
+ {n:"マーラ",t:"いいわね。二人の話が、少しだけ静かに聞こえる。",correct:"いいわね。二人の話が、少しだけ静かに聞こえる。",wrong:"騒がしい煙ね。二人には似合っているけど。"},
+ {n:"マーラ",t:"旅行では、どこへ行ったの？"},
+ {n:"カイ",t:"シアトル、ポートランド、ソルトレイク。景色は見た。出口と監視カメラの位置も覚えた。"},
+ {n:"ロウ",t:"それ、観光できてます？"},
+ {n:"カイ",t:"写真は撮ったよ。だいたい端に不審車両が写ってるけど。"},
+ {n:"マーラ",t:"次の目的地は？"},
+ {n:"カイ",t:"決めてない。東でも西でも、切符が安い方。自由って、案外使い道に困るな。"},
+ {n:"カイ",t:"俺も煙にしよ。冷たいのに、最後だけ弾ける感じ。"},
+ {order:{who:"カイ",type:"shisha",request:"ミントとベリーに、刺激を加えたシーシャ",target:"shisha|mint|berry,spice"}},
+ {n:"カイ",t:"お、いいじゃん。電気みたいに舌へ残る。",correct:"お、いいじゃん。電気みたいに舌へ残る。",wrong:"これはこれで。任務じゃないし、予定外を楽しむか。"},
+ {n:"ロウ",t:"電気の味って、分かるんですか？"},
+ {n:"カイ",t:"俺の場合はね。ほら。"},
+ {n:"",t:"カイが指先を近づけると、金属のマウスピースに青白い火花が一つ跳ねた。"},
+ {n:"マーラ",t:"店の端末には触らないでちょうだい。録音データが飛んだら、私が叫ぶわよ。"},
+ {n:"カイ",t:"音響兵器じゃないのに？"},
+ {n:"マーラ",t:"サキュバスの怒鳴り声も、十分怖いと夫は言ってる。"},
+ {n:"ロウ",t:"右に動かすだけなら……今夜できるかもしれません。"},
+ {n:"カイ",t:"“かも”禁止。動いたら寝ろ。"},
+ {n:"",t:"カイは入口が見える席から、一度も背中を離さなかった。",still:"day3-kai-reflections"},
+
+ {day:4,title:"最初の一画面",time:"22:46"},
+ {n:"",t:"四日目。ロウは入店するなり、ノートPCをカウンターへ置いた。"},
+ {show:["rowan"],n:"ロウ",t:"見てください。宇宙船、右に動きます。左にも。止まることもできます。"},
+ {n:"店主",t:"三機能もある。"},
+ {n:"ロウ",t:"そう言われると、ちょっとゲームっぽいですね。いつものをお願いします。"},
+ {n:"店主",t:"寝た？"},
+ {n:"ロウ",t:"四時間は。途中で宇宙船が勝手に回転する夢を見て起きました。"},
+ {n:"店主",t:"夢の中でもデバッグ？"},
+ {n:"ロウ",t:"夢では原因が分かったんです。でも起きたら忘れてて。悔しくて、そこから二時間調べました。"},
+ {n:"店主",t:"原因は？"},
+ {n:"ロウ",t:"回転する処理自体、まだ作ってませんでした。"},
+ {order:{who:"ロウ",type:"drink",request:"甘くて温かい、いつものドリンク",target:"drink|milk|ginger,honey"}},
+ {n:"ロウ",t:"今日は、ちゃんと味がします。",correct:"今日は、ちゃんと味がします。",wrong:"いつもと違う……でも、昨日までの僕もそんな感じでした。"},
+ {show:["rowan","reiji"],n:"レイジ",t:"見せろ。……遅ぇな。最初の三秒で客を掴め。爆発でも入れろ。"},
+ {n:"ロウ",t:"配達ゲームなので、毎回爆発はちょっと。"},
+ {n:"レイジ",t:"画面が地味だと言ってる。何を見せたい？"},
+ {n:"ロウ",t:"遠くまで続いてる宇宙と、小さい船の孤独感です。"},
+ {n:"レイジ",t:"なら孤独をもっとデカく見せろ。背景を動かせ。音を消せ。客の目を掴むのは爆発だけじゃねぇ。"},
+ {n:"ロウ",t:"……ちゃんと、企画として考えてくれてるんですね。"},
+ {n:"レイジ",t:"見せろと言ったのはオレだ。途中で投げるほど安くねぇ。"},
+ {n:"レイジ",t:"なら、爆発より強ぇ理由を作れ。店主、黒くて重いのを。"},
+ {order:{who:"レイジ",type:"drink",request:"苦くて重い、スパイス入りのコーヒー",target:"drink|coffee|cocoa,spice"}},
+ {n:"レイジ",t:"そうだ。最初の一口で、何を飲ませるか分からせろ。",correct:"そうだ。最初の一口で、何を飲ませるか分からせろ。",wrong:"今のゲームみてぇだな。狙いがまだ見えねぇ。"},
+ {show:["rowan","reiji","kai"],n:"カイ",t:"爆発は後。操作説明が出るの遅くない？　危険表示も欲しい。"},
+ {n:"レイジ",t:"……入って早々、誰だお前は。"},
+ {n:"カイ",t:"カイ。昨日ロウと知り合った旅行者。あんたは……見れば分かる。有名人だろ。"},
+ {n:"ロウ",t:"カイさん、こちら牙王レイジさん。レイジさん、カイさんは警備関係の仕事をしてるそうです。"},
+ {n:"レイジ",t:"“してるそうです”か。随分ぼやけた紹介だな。"},
+ {n:"カイ",t:"休暇中だから詳しい肩書きは置いてきた。握手する？　しない？"},
+ {n:"レイジ",t:"必要ねぇ。お前、入ってからオレの手と脚を三回ずつ見たな。"},
+ {n:"カイ",t:"そっちも俺の腰と耳を見ただろ。装備とイヤーピースを確認した。お互い様じゃん。"},
+ {n:"ロウ",t:"あの……喧嘩になる前に、ゲームの続きを見てもらってもいいですか？"},
+ {n:"店主",t:"大丈夫。これは二人なりの自己紹介だよ。"},
+ {n:"レイジ",t:"説明を読ませてる間に客が帰るぞ。"},
+ {n:"カイ",t:"分からないまま事故らせるよりマシだろ。"},
+ {n:"レイジ",t:"失敗して覚えさせろ。リングで技の説明書を配るか？"},
+ {n:"カイ",t:"ゲームならやり直せる。でも護衛対象はコンティニューしない。"},
+ {n:"ロウ",t:"えっと……二人とも、ゲームの話ですよね？"},
+ {n:"店主",t:"半分くらいは。"},
+ {n:"ロウ",t:"じゃあ演出を強くして、説明を増やして、危険表示も――"},
+ {n:"カイ",t:"全部入れろとは言ってないって。あ、俺は昨日のコーヒー。"},
+ {order:{who:"カイ",type:"drink",request:"しょうがとスパイスの鋭いコーヒー",target:"drink|coffee|ginger,spice"}},
+ {n:"カイ",t:"よし。これくらい判断が速いと助かる。",correct:"よし。これくらい判断が速いと助かる。",wrong:"判断に迷った？　ゲームの方でも同じ顔してたぞ。"},
+ {n:"カイ",t:"ほら、今の注文だって三つ選んだだろ。全部の素材を入れたら味が消える。"},
+ {n:"レイジ",t:"珍しく良いこと言うじゃねぇか、休暇男。"},
+ {n:"カイ",t:"珍しくは余計。あんたも怪我人みたいな座り方やめたら？"},
+ {n:"レイジ",t:"……何の話だ。"},
+ {n:"カイ",t:"右脚に体重かけてない。俺、そういうの見る仕事だから。"},
+ {n:"ロウ",t:"怪我してるんですか？"},
+ {n:"レイジ",t:"話をゲームから逸らすな。"},
+ {n:"店主",t:"逸らしたのはカイだけどね。"},
+ {n:"ロウ",t:"二人とも正しいんです。だから、全部必要に見えて……。"},
+ {n:"店主",t:"正しいものを全部入れたら、面白くなる？"},
+ {n:"ロウ",t:"……分かりません。甘くて、少しぼんやりできる煙をください。"},
+ {order:{who:"ロウ",type:"shisha",request:"甘く、ゆっくり考えられるシーシャ",target:"shisha|vanilla|berry,rose"}},
+ {n:"ロウ",t:"僕が作りたいのは、戦うゲームじゃなくて……届けるゲームかも。",correct:"僕が作りたいのは、戦うゲームじゃなくて……届けるゲームかも。",wrong:"煙みたいに、企画まで散らばってる気がします。"},
+ {n:"カイ",t:"何を届ける？"},
+ {n:"ロウ",t:"物資と、メッセージ。直接会えない人たちの間を飛ぶんです。"},
+ {n:"レイジ",t:"誰が待ってる？"},
+ {n:"ロウ",t:"まだ決めてません。でも、最初の相手は……帰れない場所がある人がいいかも。"},
+ {n:"カイ",t:"いいじゃん。急に顔が企画書じゃなくなった。"},
+ {n:"ロウ",t:"どういう顔ですか、それ。"},
+ {n:"カイ",t:"自分のゲームを話してる顔。さっきまでは審査員に怒られない顔だった。"},
+ {n:"レイジ",t:"なら届けろ。オレの顔色を見て、勝手にリングへ変えるな。"},
+ {n:"レイジ",t:"林檎の煙を。さっきより刺激は抑えなくていい。"},
+ {order:{who:"レイジ",type:"shisha",request:"林檎と薔薇に、刺激を加えたシーシャ",target:"shisha|apple|rose,spice"}},
+ {n:"レイジ",t:"自分で決めたなら、最後まで立ってろ。",correct:"自分で決めたなら、最後まで立ってろ。",wrong:"まだ迷ってやがる味だな。"},
+ {n:"カイ",t:"俺はすっきりするやつ。これ吸ったら、今日は口出し終了。"},
+ {order:{who:"カイ",type:"shisha",request:"甘くなく、頭が澄むシーシャ",target:"shisha|mint|lemon,rose"}},
+ {n:"カイ",t:"うん。あとはロウの担当。",correct:"うん。あとはロウの担当。",wrong:"最後まで予定外だな。まあ、あとはロウの担当。"},
+ {n:"レイジ",t:"明日までに次を見せろとは言わねぇ。今夜決めた部分だけ作れ。"},
+ {n:"ロウ",t:"レイジさんが、締切を延ばす側に……。"},
+ {n:"カイ",t:"怪我を指摘されたから、急に健康的なこと言い始めたな。"},
+ {n:"レイジ",t:"黙れ。"},
+ {n:"店主",t:"閉店まで作業する？"},
+ {n:"ロウ",t:"今日は帰ります。帰って、航路を一つだけメモして……寝ます。"},
+ {n:"カイ",t:"よし。睡眠までが任務。"},
+ {n:"レイジ",t:"お前は休暇までが任務だろうが。"},
+ {n:"ロウ",t:"宇宙を全部作るんじゃなくて……一つの航路と、三人の届け先にします。"},
+ {n:"店主",t:"タイトル画面の次が、できそうだね。"},
+ {n:"ロウ",t:"はい。今度は、そこから作ります。"},
+ {n:"",t:"雨の向こうで、貨物列車がゆっくり町を横切った。\nロウの宇宙船も、今夜は前へ進んだ。"},
+
+ {day:5,title:"完成した失敗作",time:"22:11"},
+ {n:"",t:"雨は細い糸になり、窓を休みなく縫っていた。"},
+ {show:["rowan"],n:"ロウ",t:"一応、最初から最後まで動くようになりました。面白いかは……別として。"},
+ {n:"店主",t:"最後まで？"},
+ {n:"ロウ",t:"はい。完成って言うには、ちょっと恥ずかしい完成です。"},
+ {n:"ロウ",t:"まず、落ち着くミルクをください。完成したことを忘れない程度に甘いやつ。"},
+ {order:{who:"ロウ",type:"drink",request:"柔らかく甘い、落ち着くミルク",target:"drink|milk|ginger,honey"}},
+ {n:"ロウ",t:"温かい……。完成品って、もっと達成感が爆発すると思ってました。",correct:"温かい……。完成品って、もっと達成感が爆発すると思ってました。",wrong:"予想外の味です。今のゲームも、だいたいこんな感じかも。"},
+ {show:["rowan","mara"],n:"マーラ",t:"爆発しない完成もあるわ。たいてい翌朝、誤字が見つかるもの。"},
+ {n:"ロウ",t:"マーラさんにも、失敗した完成品ってあります？"},
+ {n:"マーラ",t:"三年前の音声ドラマ。数字は最低、批評は沈黙。でも最終話まで出した。"},
+ {n:"ロウ",t:"途中でやめたくならなかったんですか。"},
+ {n:"マーラ",t:"毎週なったわ。だから毎週、次の一話だけ終わらせたの。"},
+ {n:"マーラ",t:"喉を休ませる紅茶を。今夜は甘めで。"},
+ {order:{who:"マーラ",type:"drink",request:"喉に優しく、甘い紅茶",target:"drink|tea|citrus,honey"}},
+ {n:"マーラ",t:"そう、失敗作を語る夜にはこれくらい優しくていい。",correct:"そう、失敗作を語る夜にはこれくらい優しくていい。",wrong:"刺激的ね。失敗談まで名作に聞こえそう。"},
+ {show:["rowan","mara","nessa"],n:"レクター",t:"ごきげんよう、親愛なる友よ。マーラ、約束の収録データを返しに参った。"},
+ {n:"店主",t:"ごきげんよう。あなたは初めての来店だね。"},
+ {n:"マーラ",t:"レクターよ。狼獣人で、ヴァンパイアで、今は人気声優。肩書きだけで番組が一本できる人。"},
+ {n:"レクター",t:"“今は”という一節こそ肝要だ。二百年も生きれば、一つの職へ殉ずる方がよほど不健全でね。"},
+ {n:"ロウ",t:"ロウです。ゲームを作っています。今、完成した失敗作の話を。"},
+ {n:"レクター",t:"すでに完成したのなら、失敗か否かを裁く法廷は遊び手の胸中にある。創り手の務めは、まず扉まで送り届けることだよ。"},
+ {n:"レクター",t:"一服いただけるかな。収録の残響を忘れさせる、柔らかく華やかな煙を。近頃は声優という仮面にも少々飽いてきた。"},
+ {order:{who:"レクター",type:"shisha",request:"柔らかく華やかな、刺激の少ない煙",target:"shisha|vanilla|berry,rose"}},
+ {n:"レクター",t:"見事だ。沈黙という闇にも、香りが輪郭を与えている。",correct:"見事だ。沈黙という闇にも、香りが輪郭を与えている。",wrong:"いささか鮮烈だが、録音の雑音よりは愛すべき乱調だ。",still:"day5-finished-failure"},
+ {n:"",t:"レクターはコートの陰で、銀色の人工血液パックへ細いストローを挿した。"},
+ {n:"ロウ",t:"それ、隠すものなんですか？"},
+ {n:"レクター",t:"人々へトマトジュースだと弁明する喜劇に飽いたのでね。味に関しては、こちらが遥かに理性的だ。"},
+ {n:"ロウ",t:"明日、三人に遊んでもらいます。面白くなかったら直します。"},
+ {n:"マーラ",t:"面白くても直すでしょう、あなた。",clearStill:true},
+ {n:"レクター",t:"修繕は三箇所までになさい。声が要るなら私が録ろう。倦怠と技量は、同じ秤へ載せるべきではない。"},
+ {n:"ロウ",t:"レクターさんは、人気があるのに辞めたくなるんですか？"},
+ {n:"レクター",t:"人気とは、他者が続きを望んだ数に過ぎない。それは私自身が続きを望む理由の証明にはならないのだよ。"},
+ {n:"マーラ",t:"贅沢な悩みに聞こえるけれど、長命種には切実なのよ。永遠に同じ番組を担当したくはないでしょう？"},
+ {n:"レクター",t:"初めの五十年は港で荷を数えた。次いで料理人、葬儀屋、教師、舞台照明。声優は、まだ二十三年目の若い道楽さ。"},
+ {n:"ロウ",t:"僕の人生より長い……。それでも、完成させてから次へ行く？"},
+ {n:"レクター",t:"契約した分は完遂するとも。飽きることと、無礼に投げ捨てることは、まるで別の罪だからね。"},
+ {n:"マーラ",t:"私の音声ドラマも同じ。大成功しなかったからこそ、終わらせた事実だけは誰にも取り上げられない。"},
+ {n:"ロウ",t:"完成すると、失敗の形まで確定しちゃうのが怖かったんです。"},
+ {n:"レクター",t:"未完成ならば、頭蓋の内では永遠に傑作でいられる。実に便利な棺ではないか。"},
+ {n:"マーラ",t:"ヴァンパイアが言うと棺の説得力が強すぎるわ。"},
+ {n:"レクター",t:"近頃の棺は寝心地がよろしくない。私は文明的に、普通のベッドを愛用しているよ。"},
+ {n:"ロウ",t:"そこは普通なんですね。"},
+ {n:"レクター",t:"無論、普通の食事も嗜む。人工血液だけでは、食卓を囲む会話までは摂取できないのでね。"},
+ {n:"マーラ",t:"この店へ来る理由も、それ？"},
+ {n:"レクター",t:"半分はそうだ。残る半分は、次なる役目を定めるまで、この声を沈黙へ遊ばせておけるからだよ。"},
+ {n:"ロウ",t:"じゃあ僕も、次のゲームを考える前に、今のゲームを人に渡してみます。"},
+ {n:"マーラ",t:"渡したあと、相手が黙っていても失敗とは限らないわ。言葉になるまで時間のかかる感想もある。"},
+ {n:"レクター",t:"私の代表作にも、放送から十年を経て手紙が届いた。“幼き日に聞いていた”とね。時は遅筆な批評家なのだ。"},
+ {n:"ロウ",t:"十年……僕、投稿して十分で反応がないと消したくなります。"},
+ {n:"マーラ",t:"深夜ラジオは返事の見えない仕事よ。それでも、誰かの部屋へ届く前提で話す。"},
+ {n:"レクター",t:"ゲームもまた似た舞台だ。創り手が眠る頃、名も知らぬ観客が続きを選び、物語を蘇らせる。"},
+ {n:"ロウ",t:"自分が見ていないところで遊ばれるの、怖いけど……少し嬉しいです。"},
+ {n:"マーラ",t:"その怖さは、完成したものにしか持てない特権ね。"},
+ {n:"レクター",t:"未完成には安全がある。完成には他者へ届いてしまう危険がある。だが神の加護が、危険を選ぶ汝と共にありますように。"},
+ {n:"",t:"完成した失敗作は、カウンターの上で初めて他人を待ち始めた。"},
+
+ {day:6,title:"守らなくていい夜",time:"23:04"},
+ {n:"",t:"雷は山の向こうへ遠ざかり、店内には低い雨音だけが残った。"},
+ {show:["kai"],n:"カイ",t:"こんばんは。今日は入口も窓も異常なし。……確認してない。たまたま見えただけ。"},
+ {n:"店主",t:"休暇は上手になった？"},
+ {n:"カイ",t:"地図に丸を増やすのは上手くなった。休むのは、まだ。コーヒー頼む。"},
+ {n:"カイ",t:"苦くて、目が覚めるやつ。"},
+ {order:{who:"カイ",type:"drink",request:"苦く鋭い、警戒を保つコーヒー",target:"drink|coffee|ginger,spice"}},
+ {n:"カイ",t:"これなら夜通し見張れる。見張る対象はいないけど。",correct:"これなら夜通し見張れる。見張る対象はいないけど。",wrong:"休ませる気満々じゃん。……まあ、飲むけど。"},
+ {show:["kai","rowan"],n:"ロウ",t:"カイさん。昨日、最後まで動くようになりました。"},
+ {n:"カイ",t:"お、間に合ったじゃん。俺の元担当も、間に合った。安全になった。"},
+ {n:"ロウ",t:"それは、良かったことですよね。"},
+ {n:"カイ",t:"良かった。だから俺は要らなくなった。すげえ正しい結末。"},
+ {n:"ロウ",t:"正しいのに、嬉しくない？"},
+ {n:"カイ",t:"嬉しいよ。ただ、“次の危険”が来ないと、立つ場所がない。"},
+ {show:["kai","rowan","june"],n:"ジューン",t:"立つ場所なら、客席でいいだろう。こんばんは。"},
+ {n:"カイ",t:"ジューンだっけ。でかい犬の運転手。"},
+ {n:"ジューン",t:"セントバーナードだ。今夜は客だから、救助樽は持ってない。"},
+ {n:"ジューン",t:"持ち帰りのコーヒーを。蜂蜜入りで。"},
+ {order:{who:"ジューン",type:"drink",request:"苦く甘い持ち帰りコーヒー",target:"drink|coffee|cocoa,honey"}},
+ {n:"ジューン",t:"ありがとう。必要とされない時間は、帰る場所を探す時間でもある。",correct:"ありがとう。必要とされない時間は、帰る場所を探す時間でもある。",wrong:"目は覚めそうだ。必要とされない時間は、帰る場所を探す時間でもある。"},
+ {n:"カイ",t:"帰る場所、ね。あちこち回ってるのに、候補が増えないんだよな。"},
+ {n:"店主",t:"最後に煙は？"},
+ {n:"カイ",t:"……任せる。今の俺に必要そうな方。"},
+ {n:"",t:"この一服は、カイが次に何を守るかを分ける気がする……。"},
+ {order:{who:"カイ",type:"shisha",request:"警戒を保つか、休息を促す煙",target:"shisha|vanilla|berry,rose",route:{char:"kai",trueTarget:"shisha|vanilla|berry,rose",goodTarget:"shisha|mint|berry,spice"}}},
+ {n:"カイ",t:"休めってことか。……命令なら、聞ける。",correct:"休めってことか。……命令なら、聞ける。",wrong:"まだ走れってことだな。それも俺らしい。"},
+ {n:"ロウ",t:"命令じゃなくても、休んでいいと思います。"},
+ {n:"カイ",t:"それ、今度はあんた自身にも言えよ。"},
+ {n:"ジューン",t:"元の護衛対象とは、別れの挨拶をしたのか？",clearStill:true},
+ {n:"カイ",t:"したよ。“ありがとう、もう大丈夫”って。最高の報告だった。俺も笑った。"},
+ {n:"ロウ",t:"それから、ずっと旅行を？"},
+ {n:"カイ",t:"休暇を出されて三日で部屋を引き払った。じっとしてると、呼び出しを待ってるみたいでさ。"},
+ {n:"ジューン",t:"行き先を決めずに走る客はいる。だが、降りる場所まで運転手へ任せる客はいない。"},
+ {n:"カイ",t:"俺、自分の目的地を他人に決めてもらうの得意なんだよ。任務って呼べばいい。"},
+ {n:"ロウ",t:"僕も締切がないと、何を作るか決められません。"},
+ {n:"カイ",t:"似てるな。外から来た危険とか締切なら、迷わず走れる。"},
+ {n:"ジューン",t:"自分で決めた約束は、誰も追いかけてくれないからな。"},
+ {n:"カイ",t:"元担当、最後の日に俺へ鍵を返したんだ。予備の逃走経路用。受け取った瞬間、手が空っぽになった。"},
+ {n:"ロウ",t:"空いた手で、別のものを持ってもいいんじゃないですか。"},
+ {n:"カイ",t:"たとえば？"},
+ {n:"ロウ",t:"旅行の切符とか。自分で選んだ店のカップとか。ゲームのコントローラーとか。"},
+ {n:"カイ",t:"最後のは今度貸せよ。護衛目線じゃなく、客として遊ぶ。"},
+ {n:"ジューン",t:"その予約が一つあれば、明日までは休めそうだ。"},
+ {n:"カイ",t:"一日単位かよ。まあ、最初はそれでいいか。"},
+ {n:"ロウ",t:"カイさん、休んでいるときも耳が入口へ向いてます。"},
+ {n:"カイ",t:"チーターの耳は性能がいいんだよ。職業病だけじゃない。たぶん六割くらい。"},
+ {n:"ジューン",t:"俺も眠っていてエンジン音を聞き分ける。だが休日に鍵までは握らない。"},
+ {n:"カイ",t:"俺、ホテルでも靴を履いたまま寝ることある。すぐ動けるから。"},
+ {n:"ロウ",t:"今夜は脱いでみたら？　店を出るまで、僕たちが危険を見てます。"},
+ {n:"カイ",t:"護衛対象が増えてない？　……でも、その言い方は嫌いじゃない。"},
+ {n:"ジューン",t:"誰かに任せる練習も、休暇のうちだ。"},
+ {n:"カイ",t:"分かった。十分だけ。何かあったら起こせよ。何もなくても、十分後には起こして。"},
+ {n:"",t:"カイは初めて、入口に背を向けた席で煙を吐いた。"},
+
+ {day:7,title:"地球の普通",time:"22:38"},
+ {n:"",t:"雨雲の切れ間から月が出た。店の扉は、見慣れない金属音とともに開いた。"},
+ {show:["teo"],n:"テオ",t:"こんばんは。ここは煙を摂取し、判断能力を交換する施設ですか。"},
+ {n:"店主",t:"半分正解。まず座って、地球式の歓迎を一杯どうぞ。"},
+ {n:"テオ",t:"座位は地球文化への敬意として実施します。飲料は“普通”を。"},
+ {n:"店主",t:"普通にも種類があるよ。"},
+ {n:"テオ",t:"では最も地球的な紅茶を。刺激と香辛料を含むもの。"},
+ {order:{who:"テオ",type:"drink",request:"香辛料のある刺激的な地球的な紅茶",target:"drink|tea|ginger,spice"}},
+ {n:"テオ",t:"舌が警報を発しています。地球ではこれを歓迎と呼ぶのですね。",correct:"舌が警報を発しています。地球ではこれを歓迎と呼ぶのですね。",wrong:"想定外です。地球の普通は再現性が低い。"},
+ {show:["teo","rowan"],n:"ロウ",t:"あ、新しい人。ロウです。ゲームを作ってます。"},
+ {n:"テオ",t:"テオです。ゲームは労働ですか、娯楽ですか。"},
+ {n:"ロウ",t:"今は両方になりたくて、両方になれてない感じです。"},
+ {n:"テオ",t:"二つの箱へ同時に入る必要が？　地球人は分類を好みますね。"},
+ {show:["teo","rowan","elsie"],n:"エルシー",t:"分類しないと不安なのよ。就職か個人開発か、成功か失敗か。ねえ、坊や？"},
+ {n:"ロウ",t:"エルシーさん。テオさん、この人は地元の……。"},
+ {n:"テオ",t:"高精度ホログラム。透過率と発声が優秀です。",still:"day7-earth-normal"},
+ {n:"エルシー",t:"アタシは幽霊！　オカマで死人で常連！　三つ覚えなさい！"},
+ {n:"テオ",t:"失礼しました。ホログラムより分類が多い。",clearStill:true},
+ {n:"エルシー",t:"店主、甘くて派手な煙。宇宙人の常識を吹き飛ばすやつ。"},
+ {order:{who:"エルシー",type:"shisha",request:"甘く華やかで派手な煙",target:"shisha|vanilla|berry,rose"}},
+ {n:"エルシー",t:"いいじゃない。坊や、就職して夜に作ってもいいし、作ってから就職してもいいのよ。",correct:"いいじゃない。坊や、就職して夜に作ってもいいし、作ってから就職してもいいのよ。",wrong:"変な煙！　でも人生の順番ほど変じゃないわ。"},
+ {n:"テオ",t:"選択肢は排他的ではない。重要な地球情報です。"},
+ {n:"",t:"そのとき、誤配送の香料箱が届いた。ラベンダー、桃、カルダモン。"},
+ {unlock:true,t:"新しいアクセント素材が入荷した！"},
+ {n:"テオ",t:"新規物質の安全確認をします。煙で。"},
+ {n:"店主",t:"実験台になる気？"},
+ {n:"テオ",t:"地球では常連をそう呼ぶと聞きました。"},
+ {n:"テオ",t:"林檎を基礎に、桃とカルダモンを。"},
+ {order:{who:"テオ",type:"shisha",request:"林檎、桃、カルダモンの未知の煙",target:"shisha|apple|cardamom,peach"}},
+ {n:"テオ",t:"未知ですが、危険ではない。これは良い普通です。",correct:"未知ですが、危険ではない。これは良い普通です。",wrong:"未知で、少し危険。こちらも地球的です。"},
+ {n:"エルシー",t:"ところでテオ、その宇宙服は店内でも脱がないの？"},
+ {n:"テオ",t:"脱げます。しかし内部の性別表現を地球語へ変換する手続きが面倒です。"},
+ {n:"ロウ",t:"ガラスの顔、表情が出るんですね。"},
+ {n:"テオ",t:"地球人は顔面筋の動きを重視するため、翻訳装置が記号へ変換します。今は“満足”です。"},
+ {n:"エルシー",t:"星がぐるぐるしてるけど。"},
+ {n:"テオ",t:"高い満足です。地球の笑顔より誤解が少ない。"},
+ {n:"ロウ",t:"ゲームでも、言葉が分からない相手の感情を記号で出せそう。"},
+ {n:"テオ",t:"あなたは会話の途中で仕事を開始しました。個人開発者の習性ですか？"},
+ {n:"エルシー",t:"逃避よ。悩む代わりに新機能を増やす病気。"},
+ {n:"ロウ",t:"うっ。じゃあメモだけにします。今の作品には入れない。"},
+ {n:"テオ",t:"採用しない決定も設計です。興味深い。"},
+ {n:"エルシー",t:"坊や、就職も同じよ。説明会へ行ったからって、魂を会社へ納品するわけじゃない。"},
+ {n:"テオ",t:"地球企業は魂を要求しない？　募集要項に“情熱”とありました。"},
+ {n:"エルシー",t:"比喩！　たぶん！　企業によるわ！"},
+ {n:"ロウ",t:"僕、一社見ただけで人生を決める気になってました。ゲームの選択肢より少ない。"},
+ {n:"テオ",t:"複数を観測してから選ぶ。宇宙航行では基本です。地球の就職にも推奨します。"},
+ {n:"ロウ",t:"テオさんは、地球へ来るってどうやって決めたんですか？"},
+ {n:"テオ",t:"候補惑星を七つ観測し、食文化と通信遅延を比較しました。地球は飲料名が多かった。"},
+ {n:"エルシー",t:"人生の進路をドリンクメニューで決めたの？"},
+ {n:"テオ",t:"未知の飲料が多い文明は、失敗を味として保存する傾向があります。研究価値が高い。"},
+ {n:"ロウ",t:"失敗を味として保存……レシピ帳みたいですね。"},
+ {n:"テオ",t:"はい。成功した組合せだけでなく、飲めた失敗も記録すべきです。"},
+ {n:"エルシー",t:"坊やのゲームもそう。没案は墓場じゃなく、次回作の香料棚に置きなさい。"},
+ {n:"ロウ",t:"じゃあ百二十ページの企画書、捨てずに閉じます。今作へ全部入れないだけで。"},
+ {n:"ロウ",t:"二択じゃなくていいなら……展示会のあと、就活の説明会にも行ってみます。"},
+ {n:"エルシー",t:"そう。悩みは減らなくても、入口は増やせるのよ。"},
+
+ {day:8,title:"王の傷",time:"23:26"},
+ {n:"",t:"レイジはいつもより遅く、いつもより静かに扉をくぐった。"},
+ {show:["reiji"],n:"レイジ",t:"見るな。座るまで待て。"},
+ {n:"店主",t:"脚、悪化した？"},
+ {n:"レイジ",t:"予定どおり痛ぇだけだ。強いコーヒーを出せ。"},
+ {order:{who:"レイジ",type:"drink",request:"苦く熱い、強いコーヒー",target:"drink|coffee|cocoa,spice"}},
+ {n:"レイジ",t:"これでいい。痛みは管理できる。",correct:"これでいい。痛みは管理できる。",wrong:"気を遣ったな。余計な管理はするな。"},
+ {show:["reiji","kai"],n:"カイ",t:"その歩き方で管理済みは無理あるだろ。初対面のときより悪い。"},
+ {n:"レイジ",t:"護衛崩れが医者の真似か。"},
+ {n:"カイ",t:"壊れる前に止めるのが仕事だったんでね。自分以外は。"},
+ {n:"レイジ",t:"お前も同類だろうが。"},
+ {show:["reiji","kai","june"],n:"ジューン",t:"二人とも、他人を運ぶ話になると立派だな。自分を運ぶ車は呼ばないのか？"},
+ {n:"レイジ",t:"ジューン。親父に言うなよ。"},
+ {n:"ジューン",t:"もう知ってる。材木店で、息子は昔から嘘が下手だと言ってた。"},
+ {n:"カイ",t:"店主、俺には休めるミルク。こいつへの見本。"},
+ {order:{who:"カイ",type:"drink",request:"眠りを促す柔らかなミルク",target:"drink|milk|lavender,peach"}},
+ {n:"カイ",t:"ほら、休むのも技術。俺は昨日から練習中。",correct:"ほら、休むのも技術。俺は昨日から練習中。",wrong:"刺激あるな。練習メニュー変更。"},
+ {n:"レイジ",t:"オレは煙だ。強いやつを寄越せ。"},
+ {n:"",t:"この一服は、レイジが何を“強さ”と呼ぶかを分ける気がする……。"},
+ {order:{who:"レイジ",type:"shisha",request:"強さを貫くか、休息を受け入れる煙",target:"shisha|vanilla|lavender,peach",route:{char:"reiji",trueTarget:"shisha|vanilla|lavender,peach",goodTarget:"shisha|apple|rose,spice"}}},
+ {n:"レイジ",t:"……眠くなる煙を王様に出すとは、いい度胸だ。今夜は帰る。",correct:"……眠くなる煙を王様に出すとは、いい度胸だ。今夜は帰る。",wrong:"そうだ。まだ立てる。だが試合後は医者へ行く。"},
+ {n:"ジューン",t:"送るよ。後部座席なら王様でも脚を伸ばせる。",still:"day8-carry-the-king"},
+ {n:"レイジ",t:"一度だけだ。誰にも言うな。"},
+ {n:"カイ",t:"この店、秘密の保管量すごくない？",clearStill:true},
+ {n:"ジューン",t:"レイジ、試合はいつだ。"},
+ {n:"レイジ",t:"四日後。メインだ。欠場はしねぇ。"},
+ {n:"カイ",t:"医者が止めたら？"},
+ {n:"レイジ",t:"止めさせねぇ。オレが出なきゃ興行が沈む。スタッフの給料まで動いてる。"},
+ {n:"ジューン",t:"責任を背負うのと、全部を一人で持つのは違う。お前の団体には他の選手もいるだろう。"},
+ {n:"レイジ",t:"いる。だが客はサー・ヴァーミリオンを見に来る。"},
+ {n:"カイ",t:"俺も“俺だけが間に合う”って思ってた。実際、間に合ったことも多い。だから止まれなくなった。"},
+ {n:"レイジ",t:"説教する側に回って気持ちよさそうだな。"},
+ {n:"カイ",t:"昨日休んだからな。休息一日分の説得力。"},
+ {n:"ジューン",t:"欠場しなくても、試合内容を変えることはできる。俺は雪の日、最短路より安全な道を選ぶ。"},
+ {n:"レイジ",t:"勝ち方を変えろってか。"},
+ {n:"カイ",t:"必殺技を一つ減らしても、王様は王様だろ。"},
+ {n:"レイジ",t:"……医者と、ブッカーには話す。決めるのはオレだ。"},
+ {n:"ジューン",t:"それでいい。自分の身体を相談の席へ連れて行け。"},
+ {n:"レイジ",t:"お前ら、次に会ったとき覚えてろ。"},
+ {n:"カイ",t:"次に会う前提なら、ちゃんと治して来いよ。"},
+ {n:"レイジ",t:"無名の頃は、痛ぇと言ったら出番を取られた。だから立てる限り黙る癖がついた。"},
+ {n:"ジューン",t:"今のお前は、出番を奪われる側じゃない。休む選手を守れる側だ。"},
+ {n:"カイ",t:"強くなった後も、弱かった頃のルールで自分を扱ってるんだな。"},
+ {n:"レイジ",t:"お前にだけは言われたくねぇ。必要なくなっても、まだ護衛の姿勢で座ってる奴が。"},
+ {n:"カイ",t:"だから分かるんだよ。身体だけ今に来ても、頭は昔の任務に残る。"},
+ {n:"レイジ",t:"……四日後の試合、押さえ込み中心に変える。跳ぶ技は使わねぇ。"},
+ {n:"ジューン",t:"十分な変更だ。帰りは病院の前を通る。偶然にな。"},
+ {n:"レイジ",t:"本当に世話焼きしかいねぇ店だな。店主まで笑うな。"},
+
+ {day:9,title:"アタシは死んでるけど",time:"22:54"},
+ {show:["elsie"],n:"エルシー",t:"坊やのゲーム、壁を抜けたら配達先へ直行できたわよ。画期的！"},
+ {n:"店主",t:"それはバグでは？"},
+ {n:"エルシー",t:"幽霊に壁を置く方がバグよ。まず華やかな紅茶をちょうだい。"},
+ {order:{who:"エルシー",type:"drink",request:"桃が香る華やかな紅茶",target:"drink|tea|cardamom,peach"}},
+ {n:"エルシー",t:"素敵。死後にも新しい味はあるのね。",correct:"素敵。死後にも新しい味はあるのね。",wrong:"アタシほど予想外。悪くないわ。"},
+ {show:["elsie","rowan"],n:"ロウ",t:"壁抜けは直します。でも、幽霊の配達先を作るのは面白いかも。"},
+ {n:"エルシー",t:"そうやって客の失敗まで材料にするの。作り手らしくなったじゃない。"},
+ {n:"ロウ",t:"エルシーさんは、どうしてこの町に？"},
+ {n:"エルシー",t:"死んだ場所だから。……なんて言えば格好いいけど、出る理由を決めてないだけ。"},
+ {n:"ロウ",t:"僕と同じですね。進まない理由を、選択肢のせいにしてる。"},
+ {n:"エルシー",t:"死人に刺し返すなんて、成長したわね。"},
+ {show:["elsie","rowan","nessa"],n:"レクター",t:"これはこれは。刃に貫かれても死なぬ者同士、永遠についての密談かな？"},
+ {n:"店主",t:"今夜の議題は壁抜けと配達。永遠の話は、注文を聞いてからにしよう。"},
+ {n:"エルシー",t:"レクター、アンタは町を出たことある？"},
+ {n:"レクター",t:"収録で三州を巡った。その前は船員、葬儀屋、料理人。されど帰るのは、この店が沈黙を礼節として扱うからだ。"},
+ {n:"レクター",t:"ミントを礎に、ラベンダーとカルダモンを。静謐でありながら、理性の灯は消さぬ煙を願おう。"},
+ {order:{who:"レクター",type:"shisha",request:"静かだが意識は澄む煙",target:"shisha|mint|cardamom,lavender"}},
+ {n:"レクター",t:"休息と警戒は矛盾せぬ。旅立ちと帰郷もまた、同じ円環の両端なのだろう。",correct:"休息と警戒は矛盾せぬ。旅立ちと帰郷もまた、同じ円環の両端なのだろう。",wrong:"唯一の答えを求める必要はない。香りも生も、複数の調べで成り立つ。"},
+ {n:"エルシー",t:"じゃ、展示会が終わったら一駅だけ旅行するわ。坊やの宇宙船より近く。",still:"day9-one-stop-journey"},
+ {n:"ロウ",t:"帰ってきてもいい旅行ですね。"},
+ {n:"エルシー",t:"当然。アタシの席を他の幽霊に取らせないわ。",clearStill:true},
+ {n:"ロウ",t:"僕も煙を。新しい航路を考えたいので、甘すぎない林檎を。"},
+ {order:{who:"ロウ",type:"shisha",request:"林檎と香辛料の、未知を楽しむ煙",target:"shisha|apple|cardamom,peach"}},
+ {n:"ロウ",t:"知らない場所でも、帰る航路は残せるんだ。",correct:"知らない場所でも、帰る航路は残せるんだ。",wrong:"変な航路も一本くらい、ゲームには必要ですね。"},
+ {n:"エルシー",t:"アタシが町を出ない理由、もう一つあるわ。昔の知り合いが戻ってきたとき、見つけてもらえない気がするの。"},
+ {n:"レクター",t:"百年待った友が、別の港へ帰還したことならあるとも。時間は、待つ者へ殊更に芝居がかった悪戯をする。"},
+ {n:"ロウ",t:"そのとき、どうしたんですか？"},
+ {n:"レクター",t:"ゆえに私から会いに行った。待つ場所を慈しむことと、その場所へ自らを縛ることは違うと悟ったのだ。"},
+ {n:"エルシー",t:"アンタ、そういう大事な話を人工血液すすりながらするのやめなさい。"},
+ {n:"レクター",t:"冷めれば鉄の風味が強くなる。血も紅茶も、頃合いという理屈には従順でね。"},
+ {n:"ロウ",t:"エルシーさんが一駅旅行するなら、その駅をゲームに入れてもいいですか？"},
+ {n:"エルシー",t:"取材費は高いわよ。駅弁と窓側の席。"},
+ {n:"レクター",t:"失礼ながら、幽霊に駅弁は必要なのかね？　これは純粋な学術的好奇心だ。"},
+ {n:"エルシー",t:"必要かどうかで楽しみを決めないの。長生きのくせに分かってないわね。"},
+ {n:"レクター",t:"耳の痛い正論だ。では次なる職は旅行記者としようか。世界を知ったふりで語る仕事には、些か自信がある。"},
+ {n:"ロウ",t:"声優を完全に辞めるんですか？"},
+ {n:"レクター",t:"一本だけは残すやもしれぬ。飽いた仕事にも、なお愛する一節は残るものだ。"},
+ {n:"エルシー",t:"ゼロか百かで捨てない。今夜の授業はそこね、坊や。"},
+ {n:"ロウ",t:"はい。ゲームも就職も、町を出るのも帰るのも、途中の数字がある。"},
+ {n:"レクター",t:"その台詞、記憶の書架へ納めておこう。次のオーディションで借用するやもしれぬ。"},
+ {n:"エルシー",t:"声優に飽きたって言いながら、オーディションは受けるのね。"},
+ {n:"レクター",t:"主役には飽いた。今度は三言のみの宿屋主人を受ける。短き役ほど、虚飾で技量を覆えぬからね。"},
+ {n:"ロウ",t:"僕も大作じゃなく、短いゲームを作って初めて難しさが見えました。"},
+ {n:"レクター",t:"長さの陰に隠した癖が、白日の下へ晒される。声もシステムも、その理から逃れられまい。"},
+ {n:"エルシー",t:"アタシは短い旅行で、町に残ってる理由を見つけてくる。見つからなくても土産は買う。"},
+ {n:"ロウ",t:"理由が見つからない結果も、旅行の成果にしていい？"},
+ {n:"エルシー",t:"もちろん。答えの出ない夜を楽しむために、この店があるんでしょう。"},
+ {n:"レクター",t:"では帰還の折には聞かせてくれたまえ。私は次なる職の候補として、旅路を誘う声でも稽古しておこう。"},
+
+ {day:10,title:"試遊会",time:"21:58"},
+ {n:"",t:"開店二分前。今夜だけ、看板はすでに灯っていた。"},
+ {show:["rowan","mara","kai"],n:"ロウ",t:"試遊版です。三人とも、遠慮なくお願いします。遠慮なく……でも順番に。",still:"day10-playtest"},
+ {n:"マーラ",t:"文字が小さい。"},
+ {n:"カイ",t:"敵が遅い。"},
+ {n:"ロウ",t:"開始七秒で真逆の修正が来た。"},
+ {n:"店主",t:"先に注文を取ろう。"},
+ {n:"マーラ",t:"私は桃の紅茶。批評が甘くなる保証はないけど。"},
+ {order:{who:"マーラ",type:"drink",request:"桃と香辛料の華やかな紅茶",target:"drink|tea|cardamom,peach"}},
+ {n:"マーラ",t:"飲み物は満点。ゲームは、配達相手の声がもっと聞きたい。",correct:"飲み物は満点。ゲームは、配達相手の声がもっと聞きたい。",wrong:"飲み物には驚いた。ゲームには、もっと配達相手の声が欲しい。"},
+ {n:"カイ",t:"俺は移動が気持ちいい方が大事。会話は止まって聞けるし。"},
+ {n:"ロウ",t:"両方直すと、また全部作り直しになる……。"},
+ {n:"店主",t:"誰に届けたいゲーム？"},
+ {n:"ロウ",t:"昔の僕です。大きなゲームを作りたくて、何も完成できなかった僕。"},
+ {n:"マーラ",t:"なら、その人が最後まで遊べる長さに。"},
+ {n:"カイ",t:"その人が一歩目を踏める速さに。"},
+ {n:"ロウ",t:"二人の意見をそのまま入れません。僕が選びます。会話は残して、敵は増やさない。"},
+ {n:"カイ",t:"お。助言、却下された。"},
+ {n:"マーラ",t:"成長ね。祝杯は？"},
+ {n:"ロウ",t:"目が覚めるコーヒーを。今夜は自分で決めた修正だけやります。"},
+ {order:{who:"ロウ",type:"drink",request:"甘さと刺激のある、最後の作業用コーヒー",target:"drink|coffee|cardamom,honey"}},
+ {n:"ロウ",t:"これで三時間。その後は帰ります。",correct:"これで三時間。その後は帰ります。",wrong:"予想外ですが、三時間だけ。そこは変えません。"},
+ {n:"カイ",t:"時間まで自分で決めたなら、俺は止めない。"},
+ {n:"マーラ",t:"私は止めるわ。三時間一分になったら。"},
+ {n:"カイ",t:"じゃ、見張り役は任せた。俺は煙。休めるやつ。"},
+ {order:{who:"カイ",type:"shisha",request:"柔らかく休める煙",target:"shisha|vanilla|lavender,peach"}},
+ {n:"カイ",t:"警戒なしで吸える煙、慣れると悪くない。",correct:"警戒なしで吸える煙、慣れると悪くない。",wrong:"これはこれで任務向き。今日は任務ないけど。"},
+ {n:"マーラ",t:"二周目。今度は黙って遊ぶわ。制作者が目の前にいると、こちらまで説明したくなるから。"},
+ {n:"ロウ",t:"僕も画面を見ないようにします。反応を見てると、先回りして直したくなる。"},
+ {n:"カイ",t:"じゃあ俺が二人を監視する。ゲームじゃなく制作者と批評家を。"},
+ {n:"マーラ",t:"最初の配達相手、台詞を一つ飛ばしたわ。"},
+ {n:"ロウ",t:"仕様です。全部聞かなくても届くようにしました。"},
+ {n:"カイ",t:"いいじゃん。プレイヤーが急いでも、作者が怒らない設計。"},
+ {n:"マーラ",t:"二人目は好き。答えを言わずに、荷物だけ受け取るところ。"},
+ {n:"ロウ",t:"前は事情を全部説明してました。削ったら、逆に想像してもらえるようになって。"},
+ {n:"カイ",t:"敵のいない区間、俺は退屈しなかった。音が変わるから次の場所が分かる。"},
+ {n:"ロウ",t:"そこ、カイさんの“止まっても状況は動く”って話から作りました。"},
+ {n:"カイ",t:"俺の休暇がゲームシステムになってる。複雑。"},
+ {n:"マーラ",t:"助言を素材にはした。でも料理したのはロウ。ようやくそう見える。"},
+ {n:"ロウ",t:"前は、正解をくれた人の作品みたいになってました。"},
+ {n:"マーラ",t:"意見を断るのは、相手を否定することじゃない。番組でも、全部の投稿は読めないもの。",clearStill:true},
+ {n:"カイ",t:"俺の意見、次も採用しなくていいぞ。ただ試遊には呼べ。"},
+ {n:"ロウ",t:"はい。客として予約しておきます。護衛席じゃなく、一番遊びやすい席で。"},
+ {n:"マーラ",t:"では三周目は、ロウが隣で説明して。今度は制作意図を聞きながら遊びたい。"},
+ {n:"ロウ",t:"説明していいんですか？　黙って見ないと正しいテストにならない気が。"},
+ {n:"マーラ",t:"テストにも種類があるわ。迷う場所を見る回と、考えを聞く回。混ぜなければいい。"},
+ {n:"カイ",t:"任務前の訓練と、任務後の報告みたいなもんか。"},
+ {n:"ロウ",t:"じゃあ、この星だけ説明します。配達相手が返事をしないのは、プレイヤーに考えてほしくて。"},
+ {n:"マーラ",t:"意図は分かった。でも全員が同じ答えへ着く必要はないわね。"},
+ {n:"カイ",t:"俺は“返事する余裕がない”と思った。マーラは？"},
+ {n:"マーラ",t:"“言わなくても届いた”と思った。ほら、二人とも違う。それでいいのよ。"},
+
+ {day:11,title:"完成させる夜",time:"23:47"},
+ {n:"",t:"締切まで九時間十三分。ロウの宇宙船は、最後の航路で停止した。"},
+ {show:["rowan"],n:"ロウ",t:"セーブデータが壊れます。直すなら、航路システムを全部作り直しです。"},
+ {n:"店主",t:"間に合う？"},
+ {n:"ロウ",t:"たぶん間に合わない。でも、このまま出すのも怖い。まずコーヒーを。"},
+ {order:{who:"ロウ",type:"drink",request:"最後の一歩を支える甘く鋭いコーヒー",target:"drink|coffee|cardamom,honey"}},
+ {n:"ロウ",t:"頭は動きます。怖さは消えない。",correct:"頭は動きます。怖さは消えない。",wrong:"味まで予定外。でも、止まってる時間はない。"},
+ {show:["rowan","reiji"],n:"レイジ",t:"全部作り直す顔だな。やめろ。壊れる条件を潰せ。"},
+ {n:"ロウ",t:"でも、それは根本解決じゃない。"},
+ {n:"レイジ",t:"今夜の勝ちは提出だ。次の試合で直せ。"},
+ {show:["rowan","reiji","kai"],n:"カイ",t:"同意。避けられる事故なら、まず通行止めにする。道路の作り直しは後。"},
+ {n:"ロウ",t:"二人が同意すると、逆に怖い。"},
+ {n:"カイ",t:"失礼だな。俺は休める煙を覚えた男だぞ。"},
+ {n:"レイジ",t:"オレは医者の予約を取った王だ。"},
+ {n:"ロウ",t:"すごい夜だ……。"},
+ {n:"レイジ",t:"店主、オレにはミルク。誰にも言うな。"},
+ {order:{who:"レイジ",type:"drink",request:"身体を休ませる、柔らかなミルク",target:"drink|milk|lavender,peach"}},
+ {n:"レイジ",t:"悪くねぇ。隠す必要も、もうないか。",correct:"悪くねぇ。隠す必要も、もうないか。",wrong:"強いな。まあ今夜はリングに上がらねぇ。"},
+ {n:"店主",t:"ロウ、最後の一杯は？"},
+ {n:"ロウ",t:"完成を安心させるものか、不安なまま進ませるもの。店主に任せます。"},
+ {n:"",t:"この一杯は、ロウが未完成とどう付き合うかを分ける気がする……。"},
+ {order:{who:"ロウ",type:"drink",request:"安心か、迷いながら進む勇気をくれる一杯",target:"drink|coffee|cardamom,honey",route:{char:"rowan",trueTarget:"drink|coffee|cardamom,honey",goodTarget:"drink|milk|lavender,peach"}}},
+ {n:"ロウ",t:"怖いままでいい。提出できる形にして、次に直します。",correct:"怖いままでいい。提出できる形にして、次に直します。",wrong:"今夜は安心して、決めた範囲だけ終わらせます。",still:"day11-submission-100"},
+ {n:"カイ",t:"じゃ、俺は間に合うように見張る。口は出さない。"},
+ {n:"レイジ",t:"オレは寝る。お前も提出したら寝ろ。命令だ。"},
+ {n:"ロウ",t:"待って。壊れるのは、三番目の配達を終えてから前の星へ戻ったときだけです。",clearStill:true},
+ {n:"カイ",t:"再現条件が出た。なら、その航路を提出版だけ閉じる。"},
+ {n:"レイジ",t:"客に見える塞ぎ方にしろ。透明な壁は安っぽい。"},
+ {n:"ロウ",t:"燃料切れの警告を出して、帰還ルートへ誘導します。物語にも合う。"},
+ {n:"カイ",t:"作り直しじゃなく、今ある仕組みで事故を避ける。いい判断。"},
+ {n:"ロウ",t:"でも、レビューで逃げたって言われるかも。"},
+ {n:"レイジ",t:"言わせろ。リングでも、怪我した脚を使わねぇ試合を逃げとは呼ばせねぇ。"},
+ {n:"カイ",t:"あんた、その理屈を自分にも使えるようになったんだな。"},
+ {n:"レイジ",t:"うるせぇ。ロウ、手を動かせ。"},
+ {n:"ロウ",t:"警告文、短くします。“この先は帰れない”。"},
+ {n:"カイ",t:"怖すぎ。客を脅すな。“帰還燃料を確保してください”くらい。"},
+ {n:"レイジ",t:"長ぇ。“燃料不足”でいい。"},
+ {n:"ロウ",t:"二人の間を取って、“帰りの燃料が足りません”。これで。"},
+ {n:"店主",t:"自分で決めた？"},
+ {n:"ロウ",t:"はい。二人の言葉を聞いて、僕が決めました。"},
+ {n:"カイ",t:"じゃあ、あと八時間五十二分。間に合う。"},
+ {n:"レイジ",t:"間に合わせるんじゃねぇ。終わったところで出すんだ。"},
+ {n:"ロウ",t:"……提出版を書き出します。書き出し中は何もしない。深呼吸だけ。"},
+ {n:"",t:"進捗バーが一パーセントずつ進む。誰も画面へ触れず、店の時計だけが秒を運んだ。"},
+ {n:"カイ",t:"こういう待機、苦手なんだよな。何もできないのに、結果だけ近づいてくる。"},
+ {n:"レイジ",t:"ゴング前と同じだ。準備が終わったら、あとは鳴るまで立ってろ。"},
+ {n:"ロウ",t:"九十七……九十八……止まった。"},
+ {n:"カイ",t:"止まってない。圧縮処理。端末のランプは動いてる。"},
+ {n:"レイジ",t:"呼吸しろ。さっき自分で言っただろうが。"},
+ {n:"ロウ",t:"はい。……百。できました。ファイルを開いて確認します。"},
+ {n:"店主",t:"タイトルから最後まで、一度だけ？"},
+ {n:"ロウ",t:"一度だけ。新しい修正はしない。進行不能だけ確認する。"},
+ {n:"カイ",t:"ルールが明確なら、見張る方も楽だ。開始。"},
+ {n:"",t:"午前四時十二分。ロウは宇宙から危険な航路を一本だけ閉鎖し、提出ボタンを押した。"},
+
+ {day:12,title:"雨上がり",time:"22:03"},
+ {n:"",t:"二週間ぶりに、雨が上がっていた。濡れた道路は星とネオンを半分ずつ映した。"},
+ {show:["rowan","june"],n:"ジューン",t:"展示会帰りの開発者を一名、無事に届けた。料金は後で。"},
+ {n:"ロウ",t:"受賞はしませんでした。でも、三回遊んでくれた子がいて。幽霊の届け先が好きだって。"},
+ {n:"店主",t:"おめでとう。"},
+ {n:"ロウ",t:"はい。たぶん、今ならそう言えます。最初の一杯をもう一度ください。"},
+ {order:{who:"ロウ",type:"drink",request:"始まりを思い出す、甘く温かなミルク",target:"drink|milk|ginger,honey"}},
+ {n:"ロウ",t:"同じ味なのに、前より甘い気がします。",correct:"同じ味なのに、前より甘い気がします。",wrong:"最初とは違う味。でも、今の僕にはこっちかも。"},
+ {show:["rowan","june","mara"],n:"マーラ",t:"録音しておけばよかった。今の台詞、最終回に使えるわ。"},
+ {n:"ジューン",t:"俺はいつもの持ち帰りじゃなく、ここで飲む。今夜は急ぐ客がいない。"},
+ {n:"ジューン",t:"甘く苦いコーヒーを。蓋はなしで。"},
+ {order:{who:"ジューン",type:"drink",request:"甘く苦い、店内で飲むコーヒー",target:"drink|coffee|cocoa,honey"}},
+ {n:"ジューン",t:"座って飲むと、同じ道も短く見えるな。",correct:"座って飲むと、同じ道も短く見えるな。",wrong:"予定外の休憩も悪くない。"},
+ {show:["rowan","mara","elsie"],n:"エルシー",t:"写真を撮るわよ！　死人はブレないから中央！"},
+ {n:"マーラ",t:"テオはカメラを魂の複製装置だと思って外で説明を読んでる。"},
+ {n:"ロウ",t:"レクターさんは？"},
+ {n:"エルシー",t:"全員入るよう、店の外から収録用のいい声で合図するって。近所には説明済み。"},
+ {n:"マーラ",t:"最後に煙を一つ。全員で回せる、柔らかく華やかなもの。"},
+ {order:{who:"マーラ",type:"shisha",request:"皆で囲める柔らかく華やかな煙",target:"shisha|vanilla|lavender,peach"}},
+ {n:"マーラ",t:"いい夜ね。最終回にしては、続きが多すぎる。",correct:"いい夜ね。最終回にしては、続きが多すぎる。",wrong:"予想外の最終回。でも続編にはちょうどいい。"},
+ {show:["rowan","mara","june","reiji","kai","teo","elsie","nessa"],n:"レイジ",t:"詰めろ。オレが入る。全員、画面に収まれ。",still:"day12-group-photo"},
+ {n:"カイ",t:"あんたが入ると三人分なんだよ。脚は？"},
+ {n:"レイジ",routeChar:"reiji",trueText:"治療中だ。次のシリーズは一試合減らした。休むのもオレが決める。",goodText:"治療は始めた。試合数は変えねぇが、医者の管理は受ける。",clearStill:true,stillIfTrue:"reiji",still:"reiji-true-king-rests"},
+ {n:"カイ",routeChar:"kai",trueText:"俺はこの町に、もう一週間いる。次の目的地を急がず決める。",goodText:"俺は明日また走る。でも今度は、自分で選んだ行き先へ。",clearStill:true,stillIfTrue:"kai",still:"kai-true-unguarded-morning"},
+ {n:"ロウ",routeChar:"rowan",trueText:"僕は就活もします。それと、未完成のまま始められる小さい次回作も。",goodText:"僕はまず就活します。生活を作ってから、安心して次回作を作ります。",clearStill:true,stillIfTrue:"rowan",still:"rowan-true-two-entrances"},
+ {n:"レイジ",t:"両方やれ。倒れたら止める。"},
+ {n:"カイ",t:"それ管理したいだけだろ。"},
+ {n:"マーラ",t:"展示会では、どんな人が遊んだの？"},
+ {n:"ロウ",t:"小学生くらいの子と、大学の先生と、配送会社の人。三人とも違う場所で迷いました。"},
+ {n:"ジューン",t:"同じ地図でも、客によって目印が違うからな。"},
+ {n:"ロウ",t:"先生は説明不足って言って、配送の人は説明が多いって言いました。前なら両方直そうとしてた。"},
+ {n:"マーラ",t:"今は？"},
+ {n:"ロウ",t:"どっちの意見もメモしました。でも、次に何を直すかは明日決めます。今日は感想を持って帰るだけ。"},
+ {n:"エルシー",t:"立派！　感想をその場で手術しない制作者になったわ！"},
+ {n:"レイジ",t:"受賞者のゲームは見たのか。"},
+ {n:"ロウ",t:"はい。悔しかったです。でも、面白かった。悔しいまま面白いって言えました。"},
+ {n:"カイ",t:"それ、かなり強いな。俺なら競争相手の非常口まで確認する。"},
+ {n:"レイジ",t:"オレは勝った相手の試合ほど見る。負けを管理できねぇ奴は、次も負ける。"},
+ {n:"マーラ",t:"あなたの“管理”も、少し意味が変わったわね。"},
+ {n:"レイジ",t:"余計な解説は要らねぇ。"},
+ {n:"ロウ",t:"就職説明会、明後日です。個人開発をやめる報告じゃなくて、知らない仕事を見る取材だと思って行きます。"},
+ {n:"カイ",t:"次の目的地候補を見に行く、か。俺も旅行案内所くらい寄ってみる。"},
+ {n:"エルシー",t:"アタシの一駅旅行も忘れないで。写真は盛れる角度で。"},
+ {n:"マーラ",t:"全員、次の予定が小さいのね。いい最終回だわ。"},
+ {n:"ロウ",t:"最終回じゃないです。セーブポイントです。"},
+ {n:"ジューン",t:"展示会から店まで、ロウは一度も結果を言い訳しなかった。前なら受賞作の規模から説明してただろう。"},
+ {n:"ロウ",t:"負けたことより、出せたことと遊んでもらえたことを先に話したかったんです。"},
+ {n:"マーラ",t:"順位を無視したわけじゃない。悔しいと言えたなら、ちゃんと見てる。"},
+ {n:"レイジ",t:"次に勝ちたきゃ、悔しさは持って帰れ。恥まで背負う必要はねぇ。"},
+ {n:"カイ",t:"俺も任務が終わったことを、失敗みたいに背負ってた。安全になったなら、まず祝えばよかった。"},
+ {n:"エルシー",t:"じゃあ今夜まとめて祝う！　完成、休暇、治療、旅行、就活。理由が多いほど乾杯は強いわよ。"},
+ {n:"ロウ",t:"飲み物も煙も、もう十分出てます。"},
+ {n:"エルシー",t:"なら水で乾杯！　祝うのに特別なレシピが必要だと思わないことね。"},
+ {n:"",t:"店主が人数分の水を並べた。十二夜でいちばん簡単な注文に、いちばん多くの手が伸びた。"},
+ {n:"ロウ",t:"次に迷ったら、またここへ来ます。答えじゃなく、注文を決めるところから。"},
+ {n:"",t:"レクターのよく通る低音が、夜の店内をきれいに揃えた。\nシャッターが切れ、誰も完璧ではない一枚が残った。"},
+ {allTrueStart:true},
+ {show:["kai"],n:"",t:"閉店後。全員が帰ったはずの扉が、ベルを鳴らさずに開いた。",still:"epilogue-secret-exchange"},
+ {n:"カイ",t:"店主。あんたの顔、記録しようとすると認識から滑る。能力だろ。"},
+ {n:"店主",t:"旅行者の勘？"},
+ {n:"カイ",t:"元エージェントの勘。“機関”には報告しない。これは俺が決めた。"},
+ {n:"店主",t:"なぜ？"},
+ {n:"カイ",t:"守る対象がいなくても、何を守るかは選べるって分かったから。"},
+ {n:"カイ",t:"公平に、俺の秘密から話す。元護衛対象は安全だ。でも俺は、まだ帰る場所を探してる。"},
+ {n:"店主",t:"なら、一杯ぶんだけ話そう。僕が一度も捕まらなかった理由を。"},
+ {n:"",t:"看板の灯りが消えたあとも、二人の声と雨上がりの静けさは、しばらく店に残った。"},
+ {end:true}
+];
+let step=0,currentDay=1,extraIngredientsUnlocked=false,lastCorrect=false,entranceBusy=false,sceneToken=0,discovered=JSON.parse(localStorage.getItem("smokemokeRecipes")||"{}");
+let routeFlags=JSON.parse(localStorage.getItem("smokemokeRoutes")||"{}");
+let cgUnlocked=JSON.parse(localStorage.getItem("smokemokeCG")||"{}"),activeStill="",uiHidden=false;
+let gameStarted=false,readHistory=JSON.parse(localStorage.getItem("smokemokeReadHistory")||"{}");
+let skipMode=false,skipTimer=null,currentLineWasRead=false;
+const cgCatalog=[
+  ["day1-rain-window","DAY 1　雨宿りのロウ"],
+  ["day2-king-low-angle","DAY 2　王の帰郷"],
+  ["day3-kai-reflections","DAY 3　入口に背を向けられない男"],
+  ["day5-finished-failure","DAY 5　完成した失敗作"],
+  ["day7-earth-normal","DAY 7　地球の普通"],
+  ["day8-carry-the-king","DAY 8　王を運ぶ夜"],
+  ["day9-one-stop-journey","DAY 9　一駅だけの旅行"],
+  ["day10-playtest","DAY 10　三人の試遊会"],
+  ["day11-submission-100","DAY 11　提出 100%"],
+  ["day12-group-photo","DAY 12　雨上がりの集合写真"],
+  ["rowan-true-two-entrances","ロウ TRUE　二つの入口"],
+  ["reiji-true-king-rests","レイジ TRUE　王の休息"],
+  ["kai-true-unguarded-morning","カイ TRUE　守らない朝"],
+  ["epilogue-secret-exchange","ALL TRUE　秘密の交換"]
+];
+const characterProfiles=[
+  {id:"rowan",name:"ロウ",subtitle:"タヌキ獣人／大学生・ゲームプランナー志望",text:"一人称：僕　愛称：ロウ\n\n自信なさげで姿勢が悪く、考え込むとスマートフォンへ顔を近づける。個人ゲーム開発のスランプと、就職か創作かという進路に悩んでいる。\n\n慎重さは弱点であると同時に、他人の言葉を簡単に捨てない強みでもある。十二夜を通して「正しい選択」より、自分で選んだ次の一歩を大切にするようになる。"},
+  {id:"mara",name:"マーラ",subtitle:"サキュバス／深夜ラジオのパーソナリティ",text:"既婚者で、心に決めた恋人と暮らしている。他人から精気を吸うことはなく、言葉と距離感で場を温める。\n\nコミュニケーション能力が高く、初対面同士の会話へ自然に橋を架ける人。恋愛だけでなく、仕事や孤独の相談にも耳を傾ける。\n\n華やかで軽やかに見えるが、幸福を維持するには日々の小さな選択が必要だと知っている。"},
+  {id:"june",name:"ジューン",subtitle:"セントバーナード獣人／夜間運転手",text:"大柄で穏やかな地元民。夜の道路と天候に詳しく、人や荷物を安全に送り届ける。\n\n急がせず、結論を奪わず、必要なときだけ道を示す。ロウたちにとっては、立ち止まることも移動の一部だと教える存在。\n\n車内には紙の地図を残している。迷った場所と、休めた場所を忘れないため。"},
+  {id:"reiji",name:"牙王 レイジ",subtitle:"虎獣人／トッププロレスラー “サー・ヴァーミリオン”",text:"32歳、身長210cm、体重190kg。黒い毛並みにヴァーミリオンの縞を染めた、圧倒的な超重量級レスラー。\n\n余裕と支配力に満ち、守ると決めた相手を自分の管理下へ置きたがる。面倒を見る意志は本物だが、自身の怪我だけは隠して無理をする。\n\n半年に一度、実家へ戻る二週間だけ店の常連になる。勝つために作った王の姿と、休息を必要とする本人との間で揺れている。"},
+  {id:"kai",name:"カイ／リレー",subtitle:"チーター獣人／元・機関エージェント",text:"20代前半。生体電気を増幅し、接触した相手を制圧する能力者。高速接近して脅威と護衛対象の間へ入り続ける。\n\nかつての護衛対象が安全になり、自分を必要としなくなったことで長期休暇へ入った。明るく人懐っこい一方、「間に合わない」状況を極端に恐れる。\n\n自身の負傷には無頓着。任務を失った旅の中で、必要とされなくても自分の行き先を選べるのか確かめている。"},
+  {id:"teo",name:"テオ",subtitle:"地球外文化調査員",text:"性別を外見から判別しにくい、宇宙服姿の来訪者。前面ガラスへ表情や星空のような光が表示される。\n\n地球文化への理解が浅く、飲み物、冗談、接客などを真面目に誤解する。緊張した物語に一息入れながら、常識を外側から問い直す役目を持つ。\n\n地球の『普通』を調査していたはずが、最後には例外だらけの店を最も興味深い観測地点として記録する。"},
+  {id:"elsie",name:"エルシー",subtitle:"幽霊／モロウ・クリークの世話焼き",text:"芝居がかった華やかな振る舞いと、遠慮なく本質へ切り込む言葉が特徴。町の事情にも人の噂にも詳しい。\n\n悩む相手へ優しい嘘を渡すより、本人が避けている願いを指摘する。その鋭さの根には、誰も一人で沈ませたくないという世話焼きな愛情がある。\n\n新しい客が店へ馴染むまで会話を回し、馴染んだあとは誰より楽しそうに騒ぐ。"},
+  {id:"lector",name:"レクター",subtitle:"狼獣人・ヴァンパイア／人気声優",text:"2メートルを超える大柄な男性。紳士的、知的、理屈っぽく、古典劇のような言葉遣いを好む。\n\n長い寿命に飽きないよう仕事を転々とし、近年は人気声優として活動していた。普通の食事も摂るが、人工血液パックを人目から隠して飲むことがある。\n\n役を演じ続けることにも飽きを感じ、次の生き方を探している。『ごきげんよう、親愛なる友よ』が馴染みの挨拶。"}
+];
+let endingUnlocked=localStorage.getItem("smokemokeEndingUnlocked")==="true";
+let cgViewIndex=-1;
+let conversationLog=[],lastLoggedStep=-1;
+let currentOrder=null,selectedBase=null,selectedAcc=[],craftKey=null;
+const $=id=>document.getElementById(id);
+const savedAudioSettings=(()=>{
+  try{return JSON.parse(localStorage.getItem("smokemokeAudioSettings")||"{}")}catch{return {}}
+})();
+let audioCtx=null,masterGain=null,
+  seEnabled=savedAudioSettings.seEnabled??true,bgmEnabled=savedAudioSettings.bgmEnabled??true,
+  seVolume=Number.isFinite(savedAudioSettings.seVolume)?savedAudioSettings.seVolume:.75,
+  bgmVolume=Number.isFinite(savedAudioSettings.bgmVolume)?savedAudioSettings.bgmVolume:.55;
+function saveAudioSettings(){
+  localStorage.setItem("smokemokeAudioSettings",JSON.stringify({bgmEnabled,seEnabled,bgmVolume,seVolume}));
+}
+const seFiles={
+  advance:"ui_advance_01.mp3",select:"ui_select.mp3",cancel:"ui_cancel.mp3",error:"ui_error.mp3",open:"ui_open.mp3",
+  bell:"door_bell.mp3",doorOpen:"door_open.mp3",doorClose:"door_close.mp3",chair:"chair.mp3",
+  jar:"jar_pick.mp3",cup1:"cup_place_01.mp3",cup2:"cup_place_02.mp3"
+};
+const sePool=Object.fromEntries(Object.entries(seFiles).map(([key,file])=>[key,new Audio(`assets/SE/${file}`)]));
+function playSE(key,volume=.55){
+  if(!seEnabled||!sePool[key])return;
+  const sound=sePool[key].cloneNode();sound.volume=Math.min(1,volume*seVolume);sound.play().catch(()=>{});
+}
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  masterGain=audioCtx.createGain();masterGain.gain.value=.075;masterGain.connect(audioCtx.destination);
+}
+function sfx(frequency=420,duration=.08,volume=.07){
+  if(!seEnabled)return;initAudio();
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),now=audioCtx.currentTime;
+  osc.type="sine";osc.frequency.setValueAtTime(frequency,now);
+  gain.gain.setValueAtTime(volume*seVolume,now);gain.gain.exponentialRampToValueAtTime(.001,now+duration);
+  osc.connect(gain);gain.connect(masterGain);osc.start(now);osc.stop(now+duration);
+}
+function doorBell(){
+  playSE("doorOpen",.48);setTimeout(()=>playSE("bell",.62),120);
+}
+function doorExit(){
+  playSE("chair",.4);setTimeout(()=>playSE("doorClose",.52),210);
+}
+const soundtrack=[
+  {file:"Liquid Bed 11PM.mp3",title:"Liquid Bed 11PM",artist:"J4U",cover:"liquid-bed-11pm.png"},
+  {file:"Mute Knob.mp3",title:"Mute Knob",artist:"J4U",cover:"mute-knob.png"},
+  {file:"Muted Caller.mp3",title:"Muted Caller",artist:"Daryl Beat",cover:"muted-caller.png"},
+  {file:"Strange Noob.mp3",title:"Strange Noob",artist:"J4U",cover:"strange-noob.png"},
+  {file:"The City Without Dawn.mp3",title:"The City Without Dawn",artist:"watson",cover:"city-without-dawn.png"},
+  {file:"ノスタルジア.mp3",title:"ノスタルジア",artist:"watson",cover:"nostalgia.png"},
+  {file:"プラネタリウム.mp3",title:"プラネタリウム",artist:"BGMer",cover:"planetarium.png"},
+  {file:"ロンリークライマー.mp3",title:"ロンリークライマー",artist:"BGMer",cover:"lonely-climber.png"},
+  {file:"展望書庫にて.mp3",title:"展望書庫にて",artist:"watson",cover:"observation-library.png"},
+  {file:"疲れたパリピ.mp3",title:"疲れたパリピ",artist:"BGMer",cover:"tired-partygoer.png"},
+  {file:"観劇のお誘い.mp3",title:"観劇のお誘い",artist:"BGMer",cover:"theater-invitation.png"},
+  {file:"闇夜に駆ける.mp3",title:"闇夜に駆ける",artist:"watson",cover:"run-dark-night.png"},
+  {file:"Moon Balloon.mp3",title:"Moon Balloon",artist:"Aktk",cover:"moon-balloon.png"},
+  {file:"ウタタネロンド.mp3",title:"ウタタネロンド",artist:"BGMer",cover:"utatanerondo.png"},
+  {file:"コーヒーの淹れ方.mp3",title:"コーヒーの淹れ方",artist:"BGMer",cover:"coffee-brewing.png"},
+  {file:"昼と夜の境界.mp3",title:"昼と夜の境界",artist:"BGMer",cover:"day-night-border.png"}
+];
+const music=$("musicAudio");
+let musicIndex=-1,musicStarted=false,musicHistory=[];
+let musicFavorites=new Set(JSON.parse(localStorage.getItem("smokemokeMusicFavorites")||"[]"));
+let favoriteRepeat=localStorage.getItem("smokemokeFavoriteRepeat")==="true";
+const playIcon='<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>';
+const pauseIcon='<svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>';
+function formatTime(seconds){
+  if(!Number.isFinite(seconds))return "0:00";
+  return `${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,"0")}`;
+}
+function randomTrack(){
+  const pool=favoriteRepeat&&musicFavorites.size?[...musicFavorites]:soundtrack.map((_,i)=>i);
+  const choices=pool.filter(i=>i!==musicIndex);
+  return (choices.length?choices:pool)[Math.floor(Math.random()*(choices.length?choices.length:pool.length))];
+}
+function updateMusicUI(){
+  if(musicIndex<0)return;
+  const track=soundtrack[musicIndex];
+  $("musicCover").src=`assets/covers/${track.cover}`;$("musicCover").alt=`${track.title} cover`;
+  $("musicTitle").textContent=track.title;$("musicArtist").textContent=track.artist;
+  $("musicFavorite").classList.toggle("active",musicFavorites.has(musicIndex));
+  $("musicFavRepeat").classList.toggle("active",favoriteRepeat);
+  $("musicMode").textContent=favoriteRepeat?"FAVORITES SHUFFLE":"ALL SHUFFLE";
+  $("musicPlay").innerHTML=music.paused?playIcon:pauseIcon;
+}
+function loadMusic(index,autoplay=true,remember=true){
+  if(index==null||index<0)return;
+  if(remember&&musicIndex>=0)musicHistory.push(musicIndex);
+  musicIndex=index;music.src=`assets/BGM/${soundtrack[index].file}`;updateMusicUI();
+  if(autoplay&&bgmEnabled)music.play().then(()=>{musicStarted=true;updateMusicUI()}).catch(()=>updateMusicUI());
+}
+function ensureMusicStarted(){
+  if(!bgmEnabled||musicStarted)return;
+  if(musicIndex<0)loadMusic(randomTrack(),false,false);
+  music.play().then(()=>{musicStarted=true;updateMusicUI()}).catch(()=>updateMusicUI());
+}
+function reshuffleMusicForDay(){
+  if(!musicStarted||musicIndex<0)return;
+  const targetVolume=Number($("musicVolume").value)/100;
+  const startVolume=music.volume,startedAt=Date.now(),fadeMs=720;
+  const fade=setInterval(()=>{
+    const progress=Math.min(1,(Date.now()-startedAt)/fadeMs);
+    music.volume=startVolume*(1-progress);
+    if(progress>=1){
+      clearInterval(fade);music.pause();music.volume=targetVolume;
+      musicHistory=[];loadMusic(randomTrack(),true,false);
+    }
+  },32);
+}
+music.volume=bgmVolume;
+$("musicPlay").innerHTML=playIcon;
+music.addEventListener("play",updateMusicUI);music.addEventListener("pause",updateMusicUI);
+music.addEventListener("loadedmetadata",()=>{$("musicDuration").textContent=formatTime(music.duration)});
+music.addEventListener("timeupdate",()=>{
+  $("musicNow").textContent=formatTime(music.currentTime);
+  $("musicSeek").value=music.duration?Math.round(music.currentTime/music.duration*1000):0;
+});
+music.addEventListener("ended",()=>loadMusic(randomTrack()));
+$("soundtrackBtn").onclick=()=>{
+  const opening=!$("musicPlayer").classList.contains("show");
+  closeUtilityWindows(opening?"music":"");playSE(opening?"open":"cancel",.42);
+  $("musicPlayer").classList.toggle("show",opening);if(opening)ensureMusicStarted();
+};
+$("musicClose").onclick=()=>{playSE("cancel",.35);$("musicPlayer").classList.remove("show")};
+$("musicPlay").onclick=()=>{if(musicIndex<0)ensureMusicStarted();else if(music.paused)music.play();else music.pause()};
+$("musicNext").onclick=()=>{playSE("select",.25);loadMusic(randomTrack())};
+$("musicPrev").onclick=()=>{playSE("select",.25);const previous=musicHistory.pop();if(previous!=null)loadMusic(previous,true,false);else loadMusic(randomTrack(),true,false)};
+$("musicFavorite").onclick=()=>{
+  if(musicIndex<0)return;
+  if(musicFavorites.has(musicIndex))musicFavorites.delete(musicIndex);else musicFavorites.add(musicIndex);
+  localStorage.setItem("smokemokeMusicFavorites",JSON.stringify([...musicFavorites]));updateMusicUI();
+};
+$("musicFavRepeat").onclick=()=>{
+  favoriteRepeat=!favoriteRepeat;localStorage.setItem("smokemokeFavoriteRepeat",favoriteRepeat);updateMusicUI();
+};
+$("musicSeek").oninput=event=>{if(music.duration)music.currentTime=event.target.value/1000*music.duration};
+$("musicVolume").oninput=event=>{
+  bgmVolume=event.target.value/100;music.volume=bgmVolume;
+  $("optionBgmVolume").value=event.target.value;$("optionBgmValue").textContent=event.target.value;
+  saveAudioSettings();
+};
+function actors(names=[],speaker=""){
+  const isFinal=names.length>4;$("cast").classList.toggle("final-cast",isFinal);
+  let displayNames=names;
+  if(isFinal){
+    const speakerId=actorByName[speaker];
+    if(speakerId&&names.includes(speakerId)){
+      const start=Math.floor(names.indexOf(speakerId)/3)*3;
+      displayNames=names.slice(start,start+3);
+      if(displayNames.length<3)displayNames=[...displayNames,...names.filter(id=>!displayNames.includes(id)).slice(0,3-displayNames.length)];
+    }else displayNames=finalStage.length?finalStage:names.slice(0,3);
+  }
+  const newcomers=isFinal?displayNames.filter(id=>!finalStage.includes(id)):[];
+  finalStage=isFinal?[...displayNames]:[];
+  ["rowan","mara","june","reiji","kai","teo","elsie","nessa"].forEach(id=>{
+    const el=$(id);el.classList.toggle("off",!displayNames.includes(id));
+    const jp={rowan:"ロウ",mara:"マーラ",june:"ジューン",reiji:"レイジ",kai:"カイ",teo:"テオ",elsie:"エルシー",nessa:"レクター"}[id];
+    el.classList.toggle("active",jp===speaker); el.classList.toggle("dim",speaker&&jp!==speaker);
+    if(newcomers.includes(id)){
+      el.classList.add("final-enter");
+      setTimeout(()=>el.classList.remove("final-enter"),520);
+    }
+  });
+}
+const actorByName={ロウ:"rowan",マーラ:"mara",ジューン:"june",レイジ:"reiji",カイ:"kai",テオ:"teo",エルシー:"elsie",レクター:"nessa"};
+const specialWords={
+  rowan:["アイデア","作ります","完成"],mara:["放送","ラジオ","録音"],june:["送る","運ぶ","車"],
+  reiji:["王","オレが","リング"],kai:["能力","電気","任務"],teo:["地球","未知","普通"],
+  elsie:["幽霊","死人","アタシ"],nessa:["人工血液","声優","二百年","神の加護"]
+};
+function updateExpressions(speaker,text,node={}){
+  visible.forEach(id=>{
+    let expression="neutral";
+    if(actorByName[speaker]===id){
+      if(node.expr)expression=node.expr;
+      else if(specialWords[id]?.some(word=>text.includes(word)))expression="special";
+      else if(/[？?]|怖|痛|不安|失敗|壊|飽き/.test(text))expression="concern";
+      else if(/ありがとう|おめでとう|いい|嬉|笑|助かった|悪くない/.test(text))expression="smile";
+    }
+    const portrait=$(id).querySelector(".portrait"),image=portrait.querySelector(".portrait-img");
+    const assetId=id==="nessa"?"lector":id,path=`assets/expressions/${assetId}-${expression}.png`;
+    portrait.classList.toggle("expr-special",expression==="special");
+    if(portrait.dataset.expression!==expression){
+      portrait.dataset.expression=expression;
+      portrait.animate([{opacity:.28},{opacity:1}],{duration:170,easing:"ease-out"});
+    }
+    if(image)image.src=path;
+    else portrait.style.backgroundImage=`url("${path}")`;
+  });
+}
+let visible=[],finalStage=[];
+function captureCastPositions(){
+  const positions={};
+  visible.forEach(id=>{const el=$(id);if(!el.classList.contains("off"))positions[id]=el.getBoundingClientRect()});
+  return positions;
+}
+function slideExistingCast(before,names){
+  names.forEach(id=>{
+    if(!before[id])return;
+    const after=$(id).getBoundingClientRect(),dx=before[id].left-after.left;
+    if(Math.abs(dx)>1)$(id).animate([{transform:`translateX(${dx}px)`},{transform:"translateX(0)"}],
+      {duration:520,easing:"cubic-bezier(.2,.8,.25,1)"});
+  });
+}
+function transitionCast(next,speaker,node){
+  const added=next.filter(id=>!visible.includes(id)),removed=visible.filter(id=>!next.includes(id));
+  if(!added.length&&!removed.length){visible=next;actors(visible,speaker);return false}
+  if(node._castDone){visible=next;actors(visible,speaker);return false}
+  node._castDone=true;entranceBusy=true;$("game").classList.add("entrance-lock");
+  const token=sceneToken;
+  if(added.length)doorBell();
+  if(removed.length){
+    removed.forEach(id=>$(id).classList.add("exiting"));
+    setTimeout(doorExit,260);
+  }
+  const changeDelay=removed.length?520:260;
+  setTimeout(()=>{
+    if(token!==sceneToken)return;
+    const before=captureCastPositions();
+    removed.forEach(id=>$(id).classList.remove("exiting"));
+    added.forEach(id=>$(id).classList.add("entering"));
+    visible=next;actors(visible,speaker);slideExistingCast(before,visible.filter(id=>!added.includes(id)));
+    if(added.length)setTimeout(()=>playSE("chair",added.includes("reiji")?.7:.45),180);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>added.forEach(id=>$(id).classList.remove("entering"))));
+  },changeDelay);
+  setTimeout(()=>{if(token!==sceneToken)return;entranceBusy=false;$("game").classList.remove("entrance-lock");render()},changeDelay+650);
+  return true;
+}
+function updateCamera(name){
+  const world=$("world"),ids={ロウ:"rowan",マーラ:"mara",ジューン:"june",レイジ:"reiji",カイ:"kai",テオ:"teo",エルシー:"elsie",レクター:"nessa"};
+  let pan=0,zoom=1.025;
+  if($("cast").classList.contains("final-cast")){
+    world.style.setProperty("--pan-x","0px");world.style.setProperty("--zoom",1);return;
+  }
+  if(ids[name]){
+    const actor=$(ids[name]),worldBox=world.getBoundingClientRect(),actorBox=actor.getBoundingClientRect();
+    const delta=(worldBox.left+worldBox.width/2)-(actorBox.left+actorBox.width/2);
+    pan=Math.max(-30,Math.min(30,delta*.12));zoom=1.045;
+  }
+  world.style.setProperty("--pan-x",`${pan}px`);
+  world.style.setProperty("--zoom",zoom);
+}
+function placeBubble(name){
+  const bubble=$("dialogueBubble");
+  const colors={ロウ:"#d6b778",マーラ:"#e982ad",ジューン:"#91cdb8",レイジ:"#df5459",カイ:"#62cbe3",テオ:"#b6a4ff",エルシー:"#ec8fc8",レクター:"#93bde8",店主:"#d8ad67"};
+  bubble.style.setProperty("--speaker-color",colors[name]||"#756b55");
+  bubble.classList.remove("barista","narrator");
+  if(name==="店主")bubble.classList.add("barista");
+  else if(!name)bubble.classList.add("narrator");
+  updateCamera(name);
+}
+function addLogEntry(entry){
+  if(lastLoggedStep===step)return;
+  lastLoggedStep=step;conversationLog.push(entry);
+}
+function escapeLog(value){
+  return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+function renderLog(){
+  $("logList").innerHTML=conversationLog.length?[...conversationLog].reverse().map(entry=>entry.day?
+    `<div class="log-day">DAY ${entry.day}　${escapeLog(entry.title)}</div>`:
+    `<div class="log-entry ${entry.speaker?"":"narration"}">${entry.speaker?`<strong>${escapeLog(entry.speaker)}</strong>`:""}${escapeLog(entry.text).replace(/\n/g,"<br>")}</div>`
+  ).join(""):"<p>まだ会話は記録されていません。</p>";
+  const modal=$("logOverlay").querySelector(".modal");modal.scrollTop=0;
+}
+function unlockedCgIndices(){
+  return cgCatalog.map((entry,index)=>cgUnlocked[entry[0]]?index:-1).filter(index=>index>=0);
+}
+function updateCgCount(){
+  const count=unlockedCgIndices().length;
+  $("titleCgCount").textContent=`${count} / ${cgCatalog.length}${endingUnlocked?" + BONUS":""}`;
+  $("cgCount").textContent=`${count} / ${cgCatalog.length} UNLOCKED${endingUnlocked?"　BONUS OPEN":""}`;
+}
+function renderCgGallery(){
+  const stillCards=cgCatalog.map(([id,title],index)=>cgUnlocked[id]?
+    `<button class="cg-card" data-cg-index="${index}"><img src="assets/stills/${id}.png" alt=""><b>${title}</b></button>`:
+    `<div class="cg-card locked"><b>???</b></div>`).join("");
+  const bonus=endingUnlocked?`<h3 class="cg-section">CHARACTER ARCHIVE</h3>${characterProfiles.map(profile=>
+    `<button class="cg-card profile" data-profile="${profile.id}"><img src="assets/expressions/${profile.id}-neutral.png" alt=""><b>${profile.name}　設定資料</b></button>`
+  ).join("")}<h3 class="cg-section">ENDING</h3>
+    <button class="cg-card replay" data-ending-replay><img src="assets/cafe-rear-wide.png" alt=""><b>エンドロールを再生</b></button>`:"";
+  $("cgGrid").innerHTML=stillCards+bonus;
+  $("cgStageImage").classList.remove("show");$("cgProfile").classList.remove("show");$("cgEnlarge").classList.remove("show");
+  $("cgStageEmpty").style.display="block";$("cgStageTitle").textContent="SELECT A MEMORY";cgViewIndex=-1;
+  updateCgCount();
+}
+function openCgViewer(index){
+  if(index<0||!cgUnlocked[cgCatalog[index]?.[0]])return;
+  cgViewIndex=index;
+  $("cgProfile").classList.remove("show");$("cgStageEmpty").style.display="none";
+  $("cgStageImage").src=`assets/stills/${cgCatalog[index][0]}.png`;
+  $("cgStageImage").classList.add("show");$("cgEnlarge").classList.add("show");
+  $("cgStageTitle").textContent=cgCatalog[index][1];
+  if($("cgViewer").classList.contains("show")){
+    $("cgViewerImage").src=$("cgStageImage").src;$("cgViewerTitle").textContent=cgCatalog[index][1];
+  }
+}
+function openCharacterProfile(id){
+  const profile=characterProfiles.find(item=>item.id===id);if(!profile)return;
+  cgViewIndex=-1;$("cgStageImage").classList.remove("show");$("cgStageEmpty").style.display="none";$("cgEnlarge").classList.remove("show");
+  $("cgStageTitle").textContent=`CHARACTER ARCHIVE　${profile.name}`;
+  $("cgProfile").innerHTML=`<img src="assets/expressions/${profile.id}-special.png" alt="${profile.name}">
+    <div class="cg-profile-copy"><small>${profile.subtitle}</small><h2>${profile.name}</h2><p>${profile.text}</p></div>`;
+  $("cgProfile").classList.add("show");
+}
+function moveCg(direction){
+  const unlocked=unlockedCgIndices(),position=unlocked.indexOf(cgViewIndex);
+  if(position<0||!unlocked.length)return;
+  openCgViewer(unlocked[(position+direction+unlocked.length)%unlocked.length]);
+}
+function showStill(id){
+  if(!id||activeStill===id)return;
+  activeStill=id;$("stillImage").src=`assets/stills/${id}.png`;$("stillImage").alt="";
+  $("stillLayer").classList.add("show");
+  cgUnlocked[id]=true;localStorage.setItem("smokemokeCG",JSON.stringify(cgUnlocked));
+  updateCgCount();
+}
+function clearStill(){
+  activeStill="";$("stillLayer").classList.remove("show");
+}
+function toggleUI(force){
+  uiHidden=typeof force==="boolean"?force:!uiHidden;
+  $("game").classList.toggle("ui-hidden",uiHidden);
+}
+function closeUtilityWindows(except=""){
+  if(skipMode)stopSkip();
+  [["book","book"],["logOverlay","log"],["optionsOverlay","options"],["loadOverlay","load"]].forEach(([id,key])=>{
+    if(key!==except)$(id).classList.remove("show");
+  });
+  if(except!=="music")$("musicPlayer").classList.remove("show");
+  if(except!=="options")document.body.classList.remove("title-options");
+}
+function updateSkipUI(){
+  $("skipBtn").classList.toggle("active",skipMode);
+  const label=skipMode?"既読スキップを停止":"既読スキップ";
+  $("skipBtn").title=label;$("skipBtn").setAttribute("aria-label",label);
+}
+function stopSkip(){
+  skipMode=false;clearTimeout(skipTimer);skipTimer=null;updateSkipUI();
+}
+function queueSkip(){
+  clearTimeout(skipTimer);skipTimer=null;
+  if(!skipMode)return;
+  if(!currentLineWasRead){stopSkip();return}
+  skipTimer=setTimeout(()=>advanceStory(),85);
+}
+function getDaySaves(){
+  try{return JSON.parse(localStorage.getItem("smokemokeDaySaves")||"{}")}catch{return {}}
+}
+function updateContinueUI(){
+  const saves=getDaySaves(),days=Object.keys(saves).map(Number).sort((a,b)=>a-b),latest=days.at(-1);
+  $("titleContinueBtn").disabled=!latest;
+  $("titleContinueBtn").innerHTML=latest?`つづきから<span>DAY ${latest}から</span>`:"つづきから";
+}
+function saveDayCheckpoint(){
+  if(!gameStarted)return;
+  const saves=getDaySaves();
+  saves[currentDay]={currentDay,routeFlags:{...routeFlags},updatedAt:Date.now()};
+  localStorage.setItem("smokemokeDaySaves",JSON.stringify(saves));
+  localStorage.setItem("smokemokeSave",JSON.stringify(saves[currentDay]));
+  updateContinueUI();
+  const notice=$("saveToast");notice.classList.remove("show");void notice.offsetWidth;notice.classList.add("show");
+}
+function openContinuePicker(){
+  const saves=getDaySaves(),days=Object.keys(saves).map(Number).sort((a,b)=>a-b);
+  $("continueDayList").innerHTML=renderDayButtons(days,"continue");
+  $("continuePicker").classList.add("show");
+}
+function renderDayButtons(days,kind){
+  return days.map(day=>{
+    const title=story.find(node=>node.day===day)?.title||"";
+    return `<button data-${kind}-day="${day}">DAY ${day}<small>${title}</small></button>`;
+  }).join("");
+}
+function openLoadWindow(){
+  const saves=getDaySaves(),days=Object.keys(saves).map(Number).sort((a,b)=>a-b);
+  closeUtilityWindows("load");$("loadDayList").innerHTML=days.length?renderDayButtons(days,"load"):"<p>ロードできる日付はまだありません。</p>";
+  $("loadOverlay").classList.add("show");
+}
+function resetSceneState(){
+  sceneToken++;entranceBusy=false;visible=[];actors([],"");clearStill();toggleUI(false);stopSkip();
+  endingObserver?.disconnect();endingUserPaused=false;
+  $("mix").classList.remove("show");$("book").classList.remove("show");$("logOverlay").classList.remove("show");
+  $("optionsOverlay").classList.remove("show");$("loadOverlay").classList.remove("show");$("end").classList.remove("show","rolling","paused");
+  $("game").classList.remove("mixing","entrance-lock");$("dayTransition").classList.remove("show","epilogue");
+}
+function returnToTitle(){
+  resetSceneState();gameStarted=false;document.body.classList.remove("title-options");
+  $("titleScreen").classList.remove("hidden");$("continuePicker").classList.remove("show");
+  updateContinueUI();updateCgCount();
+}
+function beginGame(saved=null){
+  resetSceneState();gameStarted=true;$("titleScreen").classList.add("hidden");document.body.classList.remove("title-options");
+  conversationLog=[];lastLoggedStep=-1;
+  if(saved){
+    currentDay=Number(saved.currentDay)||1;
+    step=story.findIndex(node=>node.day===currentDay);if(step<0)step=0;
+    routeFlags=saved.routeFlags||{};
+  }else{
+    step=0;currentDay=1;routeFlags={};
+    localStorage.setItem("smokemokeRoutes","{}");localStorage.removeItem("smokemokeSave");localStorage.removeItem("smokemokeDaySaves");
+  }
+  story.forEach(node=>{delete node._castDone;delete node._entered});
+  renderBook();render();
+}
+function endingOutcome(id){
+  const isTrue=routeFlags[id]==="true";
+  const outcomes={
+    rowan:isTrue?
+      "就職活動を続けながら、未完成のゲームも捨てなかった。展示会で受け取った感想を、一つずつ次の画面へ変えている。誰かの正解を借りるのではなく、自分が面白いと思った理由を説明できるようになった。\n\n最初の作品は、雨の町で居場所を探す短いゲームになった。遊んだ人数はまだ多くない。それでも感想欄には、知らない誰かから「続きを待っています」と書かれていた。\n\nロウは今も店の隅でスマートフォンを覗き込む。ただし、ときどき姿勢を直して店主へ画面を見せる。次に迷ったときも、答えではなく注文を決めるところから始めるつもりだ。":
+      "まず生活の足場を選び、地元の小さな開発会社へ入った。個人制作だけに賭けなかったことを、以前のロウなら敗北と呼んだかもしれない。今は、それも自分で選んだ制作環境だと考えている。\n\n仕事で覚えたことは、週末のゲームへ少しずつ持ち帰った。更新は遅く、予定表は何度も書き換わったが、プロジェクトを削除することはなかった。\n\n完成日を聞かれると、ロウは困ったように笑う。「まだ決めてません。でも、次に何を作るかは決めました」。それで十分だと思える夜が、少しずつ増えている。",
+    reiji:isTrue?
+      "レイジは怪我を公表し、治療と休養のためにリングを離れた。無敗の王者が見せた最も意外な決断を、観客は敗北ではなく約束として受け取った。\n\n復帰戦の日程はまだ白紙だ。代わりに彼は若手の練習へ顔を出し、無理を隠す選手を見つけるたび、低い声で休めと命じている。以前の自分へ言えなかった言葉だった。\n\n故郷へ戻る周期は半年から三か月になった。深夜、巨大な身体をカウンターへ収めて、甘すぎない一杯を待つ。守るべき居場所の中へ、ようやく自分自身も含め始めている。":
+      "レイジは試合数を減らし、怪我と付き合いながら王座を守った。以前なら隠していた痛みも、今は担当医とマネージャーには伝える。それだけで周囲の緊張はずいぶん違った。\n\n休養日を『管理される日』と呼ぶのは気に入らないらしい。それでも予定表の空白を勝手に試合で埋めることはなくなった。空いた夜には実家へ戻り、店の狭い椅子を軋ませている。\n\n勝つことをやめたわけではない。ただ、次も勝つために今日は退く。その判断を下せるようになった王者は、以前より少しだけ手強い。",
+    kai:isTrue?
+      "カイは次の目的地を急いで決めるのをやめ、モロウ・クリークにもう一週間滞在した。誰にも命じられていない待機は、任務より落ち着かなかったらしい。\n\n町を離れたあとも、機関へ戻るとは答えなかった。守る対象がいなくても、自分が何を守りたいかは選べる。その考えを確かめるように、各地の小さな町を歩いている。\n\n店には写真つきのメッセージが届く。観光地より、深夜営業の店や妙な自動販売機ばかりだ。最後にはいつも「ここも悪くない。でも、そっちの席は空けといて」と書かれている。":
+      "カイは再び旅に出た。今度は任務のためではなく、立ち止まってもいい場所を探すために。目的地を尋ねられても、まずは西、とだけ答えた。\n\n誰かに必要とされていない時間は、まだ少し怖い。それでも危険の兆候を探す代わりに、景色や食べ物の名前を覚えるようになった。間に合わなくても失われないものが、世界にはいくつもある。\n\n店には、ときどき絵葉書が届く。短い近況の最後には必ず帰路の候補が書かれている。モロウ・クリークは、いつの間にかその候補から外れない町になった。"
+  };
+  return outcomes[id];
+}
+const endingStories={
+  mara:"マーラは結婚生活について尋ねられるたび、幸福は完成品ではなく毎日調合するものだと答える。甘すぎる日も、苦すぎる日も、二人で味を確かめればいい。\n\n深夜ラジオでは、以前より恋愛相談以外の手紙も読むようになった。仕事、家族、種族、孤独。誰かを誘惑する声だと評された彼女の声は、いまでは帰る場所を思い出させる声として知られている。\n\n放送後に店へ寄る夜は少し減った。それでも現れると、全員を会話へ巻き込み、最後には店主の分まで勝手に注文する。吸わなくなった精気の代わりに、賑やかな夜を持ち帰っている。",
+  june:"ジューンは変わらず夜の道を走っている。雨の日も、晴れの日も、荷物と乗客を目的地へ届ける。ただし最近は、予定表に自分の休憩地点も書き込むようになった。\n\n助手席には町ごとの小さな地図が積まれ、休める店には丸印がついている。(s)mokeMokeの印だけは、何度描き直しても他より大きい。\n\n新人運転手へ道を教えるとき、彼は最短経路だけでなく、夜中でも明かりのある場所を伝える。「迷わないことより、迷ったときに停まれることの方が大事だからね」。",
+  teo:"テオの地球文化調査報告書は、予定の三倍の長さになった。飲み物、煙、雨、冗談、そして閉店時刻の決まっていない店。分類不能という注釈が、最も多く付いた項目だった。\n\n地球式の笑いを理解するため、テオは自作の冗談を送り続けている。成功率はまだ低いが、前面ガラスに表示される得意げな顔まで含めれば、店では概ね好評だ。\n\n帰還前の最後の報告にはこう記された。「この惑星の居場所とは、座標ではなく、再訪を期待される状態を指す」。その仮説を検証するため、次の訪問申請はすでに提出済みである。",
+  elsie:"エルシーは今日も、遠慮という薄い包装紙を容赦なく破る。けれど彼女の言葉が鋭いのは、傷つけたいからではない。本人が隠したまま忘れかけている願いを、先に見つけてしまうからだ。\n\n町の相談事は相変わらず彼女の席へ集まる。法改正の書類、恋人への謝り方、新しい服の色。答えたあとには必ず、自分で決めなさい、と付け加える。\n\n店へ入れば、まず全員の顔色を確認する。沈んだ客がいれば華やかな注文を一つ。誰も困っていなければ、自分が一番楽しそうに笑う。それも立派な世話焼きの形だ。",
+  lector:"レクターは人気声優としての活動を休止した。引退という言葉は使わない。彼にとって数年の休みは、人間にとっての長い週末ほどのものらしい。\n\n次に選んだ仕事は、小さな劇場の朗読演出だった。表舞台へ立たず、若い役者へ台詞の呼吸を教える。芝居がかった古い挨拶は変わらないが、他人の声を聞く時間は以前より増えた。\n\n人工血液パックを隠す癖だけは直っていない。店主は何も言わず、いつもの席に不透明なグラスを置く。レクターは一礼し、「神の加護が、この慎ましき秘密と共にありますように」と微笑む。"
+};
+let endingObserver=null,endingUserPaused=false;
+function endingChapter(kicker,title,text,image,reverse=false,still=false,expression="smile"){
+  if(still)return `<section class="ending-still"><img src="assets/stills/${image}.png" alt=""><p>${text}</p></section>`;
+  return `<section class="ending-chapter${reverse?" reverse":""}">
+    <div class="ending-visual portrait"><img class="ending-neutral" src="assets/expressions/${image}-neutral.png" alt="${title}">
+      <img class="ending-expression" src="assets/expressions/${image}-${expression}.png" alt=""></div>
+    <div class="ending-copy"><small>${kicker}</small><h2>${title}</h2><p>${text}</p></div>
+  </section>`;
+}
+function startEnding(){
+  stopSkip();toggleUI(false);closeUtilityWindows();
+  endingUnlocked=true;localStorage.setItem("smokemokeEndingUnlocked","true");updateCgCount();
+  const allTrue=["rowan","reiji","kai"].every(id=>routeFlags[id]==="true");
+  const found=Object.keys(discovered).length;
+  endingObserver?.disconnect();endingUserPaused=false;
+  $("endingScroll").style.transform="";$("endingPause").textContent="一時停止";
+  $("endingFast").dataset.fast="false";$("endingFast").textContent="早送り";
+  $("endingScroll").innerHTML=`
+    <div class="ending-opening"><h1>DAY 12 — CLOSED</h1><p>3:18 AM　雨上がりの町に、次の夜が待っている。</p>
+      <p>発見レシピ ${found} / ${Object.keys(recipes).length}</p></div>
+    ${endingChapter("AFTER STORY","ロウ",endingOutcome("rowan"),"rowan")}
+    ${endingChapter("AFTER STORY","レイジ",endingOutcome("reiji"),"reiji",true,false,"special")}
+    ${endingChapter("AFTER STORY","カイ",endingOutcome("kai"),"kai")}
+    ${endingChapter("AFTER STORY","マーラ",endingStories.mara,"mara",true)}
+    ${endingChapter("AFTER STORY","ジューン",endingStories.june,"june")}
+    ${endingChapter("AFTER STORY","テオ",endingStories.teo,"teo",true,false,"special")}
+    ${endingChapter("AFTER STORY","エルシー",endingStories.elsie,"elsie",false,false,"special")}
+    ${endingChapter("AFTER STORY","レクター",endingStories.lector,"lector",true,false,"special")}
+    ${endingChapter("A NIGHT TO REMEMBER","集合写真","答えではなく、次の注文を。","day12-group-photo",false,true)}
+    ${allTrue?endingChapter("SECRET EPILOGUE","秘密","秘密を分け合う夜。","epilogue-secret-exchange",false,true):""}
+    <section class="ending-credits">
+      <img src="assets/smokemoke-logo.png" alt="(s)mokeMoke">
+      <h2>CREATED BY</h2><strong>Kroudy_</strong>
+      <p>企画・シナリオ・キャラクター・制作</p>
+      <h2>THANK YOU FOR PLAYING</h2>
+      <p>営業時間　22時から、客がいなくなるまで。<br>また居場所が必要な夜に。</p>
+    </section>`;
+  const end=$("end");end.classList.add("show");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    end.classList.add("rolling");
+    const mobileEnding=window.matchMedia("(orientation:landscape) and (max-height:500px)").matches;
+    const expressionThreshold=mobileEnding?.18:.78;
+    endingObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
+      if(entry.intersectionRatio>=expressionThreshold){
+        entry.target.classList.add("reveal-expression");endingObserver.unobserve(entry.target);
+      }
+    }),{threshold:[expressionThreshold]});
+    end.querySelectorAll(".ending-chapter").forEach(chapter=>endingObserver.observe(chapter));
+  }));
+}
+function render(){
+  const node=story[step]; if(!node)return;
+  if(node.allTrueStart){
+    stopSkip();
+    if(!["rowan","reiji","kai"].every(id=>routeFlags[id]==="true")){
+      step=story.findIndex((item,index)=>index>step&&item.end);render();return;
+    }
+    visible=[];actors([],"");$("dayLabel").textContent="EPILOGUE";$("dayTitle").textContent="閉店後";
+    $("dayTransition").classList.add("show","epilogue");
+    const token=sceneToken;setTimeout(()=>{if(token!==sceneToken)return;$("dayTransition").classList.remove("show","epilogue");step++;render()},1800);
+    return;
+  }
+  if(node.day){
+    stopSkip();
+    clearStill();toggleUI(false);
+    currentDay=node.day;extraIngredientsUnlocked=currentDay>7;
+    saveDayCheckpoint();
+    visible=[];actors([],"");
+    $("dayLabel").textContent=`DAY ${node.day}`;$("dayTitle").textContent=node.title||"";
+    const paper=dailyPapers[node.day];
+    $("paperDate").textContent=paper[0];$("paperHeadline").textContent=paper[1];$("paperBody").textContent=paper[2];
+    $("paperSideTitle").textContent=paper[3];$("paperSideBody").textContent=paper[4];
+    addLogEntry({day:node.day,title:node.title||""});
+    $("dayTransition").classList.remove("epilogue");$("dayTransition").classList.add("show");
+    reshuffleMusicForDay();
+    return;
+  }
+  if(node.show){
+    if(transitionCast(node.show,node.n,node))return;
+  } else actors(visible,node.n);
+  if(node.clearStill)clearStill();
+  if(node.still&&(!node.stillIfTrue||routeFlags[node.stillIfTrue]==="true"))showStill(node.still);
+  if(node.unlock){
+    extraIngredientsUnlocked=true;
+    $("toast").textContent="新しいアクセント素材が3種類入荷した！";$("toast").className="show";
+    setTimeout(()=>$("toast").className="",2400);playSE("open",.65);
+  }
+  if(node.order){stopSkip();openMix(node.order);return}
+  if(node.end){startEnding();return}
+  $("speaker").textContent=node.n||"";
+  const line=node.routeChar?(routeFlags[node.routeChar]==="true"?node.trueText:node.goodText):
+    (node.correct||node.wrong)?(lastCorrect?node.correct:node.wrong):node.t;
+  const readKey=`${node.n||""}\u241f${line||""}`;
+  currentLineWasRead=!!readHistory[readKey];
+  readHistory[readKey]=true;localStorage.setItem("smokemokeReadHistory",JSON.stringify(readHistory));
+  $("text").textContent=line;updateExpressions(node.n||"",line||"",node);
+  addLogEntry({speaker:node.n||"",text:line||""});
+  placeBubble(node.n||"");
+  queueSkip();
+}
+$("dayStartButton").onclick=()=>{
+  playSE("cup1",.5);$("dayTransition").classList.remove("show");step++;render();
+};
+function advanceStory(){
+  if(!gameStarted||entranceBusy||$("mix").classList.contains("show")||$("book").classList.contains("show")||$("logOverlay").classList.contains("show")||$("optionsOverlay").classList.contains("show")||$("loadOverlay").classList.contains("show")||$("end").classList.contains("show")||$("dayTransition").classList.contains("show"))return;
+  if(seEnabled)initAudio();
+  ensureMusicStarted();
+  playSE("advance",.34);
+  step++;render();
+}
+$("game").addEventListener("click",event=>{
+  if(event.target.closest("button")||event.target.closest("input")||event.target.closest("#musicPlayer")||event.target.closest("#mix")||event.target.closest("#book")||event.target.closest("#logOverlay")||event.target.closest("#optionsOverlay")||event.target.closest("#loadOverlay")||event.target.closest("#end"))return;
+  if(uiHidden){toggleUI(false);return}
+  advanceStory();
+});
+$("viewBtn").onclick=()=>toggleUI(true);
+$("skipBtn").onclick=()=>{
+  if($("mix").classList.contains("show")||$("dayTransition").classList.contains("show")||$("end").classList.contains("show"))return;
+  skipMode=!skipMode;updateSkipUI();
+  if(skipMode){currentLineWasRead=true;queueSkip()}else clearTimeout(skipTimer);
+};
+$("game").addEventListener("contextmenu",event=>{event.preventDefault();toggleUI()});
+window.addEventListener("keydown",event=>{
+  if(event.key.toLowerCase()==="h"){event.preventDefault();toggleUI();return}
+  if((event.key==="Enter"||event.key===" ")&&!event.repeat){
+    event.preventDefault();advanceStory();
+  }
+});
+function openMix(order){
+  currentOrder=order;selectedBase=null;selectedAcc=[];$("game").classList.add("mixing");$("mix").classList.add("show");
+  $("mix").classList.toggle("shisha",order.type==="shisha");
+  $("craftOverlay").className="";
+  $("request").textContent=`${order.who}：「${order.request}」`;
+  renderIngredients();updateMix();
+}
+function renderIngredients(){
+  const d=ingredientData[currentOrder.type];
+  $("baseTitle").textContent=`${currentOrder.type==="drink"?"ドリンク":"シーシャ"}のベースを1つ`;
+  $("bases").innerHTML=Object.entries(d.bases).map(([k,v])=>`<button class="ingredient" data-kind="base" data-key="${k}" style="--icon-sheet:url(assets/ingredients/${currentOrder.type}-${k}.png)">${v[0]}</button>`).join("");
+  const available=Object.entries(d.accents).filter(([,v])=>!v[3]||extraIngredientsUnlocked);
+  const accentButtons=available.map(([k,v])=>`<button class="ingredient" data-kind="accent" data-key="${k}" style="--icon-sheet:url(assets/ingredients/${currentOrder.type}-${k}.png)">${v[0]}</button>`).join("");
+  const lockedButtons=Array.from({length:Object.keys(d.accents).length-available.length},()=>'<button class="ingredient locked" disabled>未入荷</button>').join("");
+  $("accents").innerHTML=accentButtons+lockedButtons;
+  $("mix").querySelectorAll(".ingredient").forEach(b=>b.onclick=()=>selectIngredient(b.dataset.kind,b.dataset.key));
+}
+function selectIngredient(kind,key){
+  playSE("jar",.42);setTimeout(()=>playSE("select",.3),55);
+  if(kind==="base")selectedBase=selectedBase===key?null:key;
+  else if(selectedAcc.includes(key))selectedAcc=selectedAcc.filter(x=>x!==key);
+  else if(selectedAcc.length<2)selectedAcc.push(key);
+  updateMix();
+}
+function profile(){
+  let vals=[0,0,0,0],tags=[];
+  const d=ingredientData[currentOrder.type];
+  const entries=[];
+  if(selectedBase)entries.push(d.bases[selectedBase]);
+  selectedAcc.forEach(k=>entries.push(d.accents[k]));
+  entries.forEach(e=>{e[1].forEach((v,i)=>vals[i]=Math.min(5,vals[i]+v));tags.push(...e[2])});
+  const count={};tags.forEach(t=>count[t]=(count[t]||0)+1);
+  return {vals,tags:Object.keys(count).sort((a,b)=>count[b]-count[a]).slice(0,2)};
+}
+function updateMix(){
+  $("mix").querySelectorAll('[data-kind="base"]').forEach(b=>b.classList.toggle("selected",b.dataset.key===selectedBase));
+  $("mix").querySelectorAll('[data-kind="accent"]').forEach(b=>{b.classList.toggle("selected",selectedAcc.includes(b.dataset.key));b.disabled=selectedAcc.length>=2&&!selectedAcc.includes(b.dataset.key)});
+  const d=ingredientData[currentOrder.type],names=[];
+  if(selectedBase)names.push(d.bases[selectedBase][0]);selectedAcc.forEach(k=>names.push(d.accents[k][0]));
+  $("selectedList").textContent=names.length?names.join(" ＋ "):"—";
+  const slotNames=[selectedBase?d.bases[selectedBase][0]:"BASE",
+    selectedAcc[0]?d.accents[selectedAcc[0]][0]:"ACCENT",
+    selectedAcc[1]?d.accents[selectedAcc[1]][0]:"ACCENT"];
+  $("selectedSlots").querySelectorAll(".mix-slot").forEach((slot,index)=>{
+    slot.textContent=slotNames[index];slot.classList.toggle("filled",index===0?!!selectedBase:!!selectedAcc[index-1]);
+  });
+  const p=profile(),labels=["甘味","苦味","酸味","刺激"];
+  $("gauges").innerHTML=labels.map((l,i)=>`<div class="gauge-row"><span>${l}</span><div class="bar"><div class="fill" style="width:${p.vals[i]*20}%"></div></div><b>${p.vals[i]}</b></div>`).join("");
+  $("tags").innerHTML=p.tags.map(t=>`<span class="tag">${t}</span>`).join("");
+  const completeKey=selectedBase&&selectedAcc.length===2?keyFor(currentOrder.type,selectedBase,selectedAcc):null;
+  const previewIndex=completeKey&&completeKey in previewPositions?previewPositions[completeKey]:null;
+  const known=previewIndex!==null&&!!discovered[completeKey],unknownRecipe=previewIndex!==null&&!known;
+  $("productPreview").classList.toggle("ready",known);
+  $("productPreview").classList.toggle("unknown",unknownRecipe);
+  $("productPreview").style.backgroundImage=known?`url("assets/recipes/${recipeArt[completeKey]}.png")`:"none";
+  $("productPreview").style.backgroundSize="contain";$("productPreview").style.backgroundPosition="center";
+  $("recipeHint").textContent=!completeKey?"素材を選択":known?recipes[completeKey].name:unknownRecipe?"未発見レシピ　???":"即興ミックス";
+  $("serve").disabled=!(selectedBase&&selectedAcc.length===2);
+}
+function keyFor(type,base,acc){return `${type}|${base}|${[...acc].sort().join(",")}`}
+function revealCraftResult(){
+  const recipe=recipes[craftKey],previewIndex=craftKey in previewPositions?previewPositions[craftKey]:null;
+  $("craftOverlay").classList.remove("making");$("craftOverlay").classList.add("finished");
+  $("resultArt").classList.toggle("improv",previewIndex===null);
+  $("resultArt").style.backgroundImage=previewIndex===null?"none":`url("assets/recipes/${recipeArt[craftKey]}.png")`;
+  $("resultArt").style.backgroundSize="contain";$("resultArt").style.backgroundPosition="center";
+  $("resultName").textContent=recipe?recipe.name:"即興ミックス";
+  if(recipe&&!discovered[craftKey]){
+    discovered[craftKey]=true;localStorage.setItem("smokemokeRecipes",JSON.stringify(discovered));
+    $("toast").textContent=`新レシピ発見：${recipe.name}`;$("toast").className="show";setTimeout(()=>$("toast").className="",2400);
+  }
+  sfx(lastCorrect?660:520,.16,.09);setTimeout(()=>sfx(lastCorrect?880:620,.18,.07),110);
+  renderBook();
+}
+$("serve").onclick=()=>{
+  craftKey=keyFor(currentOrder.type,selectedBase,selectedAcc);lastCorrect=craftKey===currentOrder.target;
+  if(currentOrder.route){
+    const route=currentOrder.route;
+    routeFlags[route.char]=craftKey===route.trueTarget?"true":craftKey===route.goodTarget?"good":"good";
+    localStorage.setItem("smokemokeRoutes",JSON.stringify(routeFlags));
+  }
+  $("craftOverlay").className="show making";$("craftStatus").textContent="素材を準備しています…";
+  sfx(380,.12,.06);
+  setTimeout(()=>{$("craftStatus").textContent=currentOrder.type==="drink"?"抽出しています…":"フレーバーを混ぜています…";sfx(440,.12,.05)},520);
+  setTimeout(()=>{$("craftStatus").textContent="香りを整えています…";sfx(520,.12,.05)},1120);
+  setTimeout(revealCraftResult,1950);
+};
+$("resultServe").onclick=()=>{
+  playSE(currentOrder.type==="drink"?(Math.random()>.5?"cup1":"cup2"):"cup2",.58);
+  const impressions={
+    ロウ:{drink:"……香りだけで、肩の力が少し抜けます。もう一口だけ考えてから、話していいですか。",shisha:"煙がほどけるのを見てると、考えも一本ずつ分けられそうです。"},
+    マーラ:{drink:"いい香り。熱いうちと冷めてからで、ちゃんと表情が変わるわね。",shisha:"最初は軽いのに、あとから余韻が来る。話の組み立てみたい。"},
+    ジューン:{drink:"温度も甘さも丁度いい。急いで飲ませない味だな。",shisha:"深く吸わなくても香りが残る。夜道の休憩にはこれくらいがいい。"},
+    レイジ:{drink:"悪くねぇ。熱さも苦さも逃げてない。もう一口寄越せ。",shisha:"煙の芯が太いな。こういうのでいい。余計な飾りはいらねぇ。"},
+    カイ:{drink:"お、効く。舌より先に頭が起きる感じ。もう一口いけるな。",shisha:"抜けがいいな。息を吐くたび、余計な警戒まで外へ出てく。"},
+    テオ:{drink:"温度と香気を確認。これは飲料であり、歓迎の儀式でもあるのですね。",shisha:"煙の形は保存できない。だから観察する価値がある、と理解しました。"},
+    エルシー:{drink:"あら、いいじゃない。口当たりは優しいのに、言いたいことは残る味よ。",shisha:"この香り、気取ってなくて好き。二口目――じゃないわね、二吸い目も頂くわ。"},
+    レクター:{drink:"ほう。香りの幕が上がり、苦味が静かに台詞を結ぶ。見事だ。",shisha:"煙は消えるからこそ美しい。余韻まで含めて、よき一幕であった。"}
+  };
+  const comment=impressions[currentOrder.who]?.[currentOrder.type];
+  if(comment&&!currentOrder._impressionAdded){
+    currentOrder._impressionAdded=true;story.splice(step+1,0,{n:currentOrder.who,t:comment});
+  }
+  $("mix").classList.remove("show");$("game").classList.remove("mixing");step++;render();renderBook();
+};
+function renderBook(){
+  const found=Object.keys(recipes).filter(k=>discovered[k]);
+  $("recipeList").innerHTML=found.length?found.map(k=>{
+    const r=recipes[k],parts=k.split("|"),d=ingredientData[parts[0]],acc=parts[2].split(",");
+    const names=[d.bases[parts[1]][0],...acc.map(x=>d.accents[x][0])];
+    const entries=[d.bases[parts[1]],...acc.map(x=>d.accents[x])],vals=[0,0,0,0],tagCount={};
+    entries.forEach(e=>{e[1].forEach((v,i)=>vals[i]=Math.min(5,vals[i]+v));e[2].forEach(t=>tagCount[t]=(tagCount[t]||0)+1)});
+    const tagList=Object.keys(tagCount).sort((a,b)=>tagCount[b]-tagCount[a]).slice(0,2);
+    return `<div class="recipe-card"><div class="recipe-thumb" style="background-image:url(assets/recipes/${recipeArt[k]}.png);background-size:contain;background-position:center"></div>
+      <strong>${r.name}</strong><br>${names.join(" ＋ ")}<br>
+      <small>${r.desc}</small><div>甘味 ${vals[0]}　苦味 ${vals[1]}　酸味 ${vals[2]}　刺激 ${vals[3]}</div>
+      <div>${tagList.map(t=>`<span class="tag">${t}</span>`).join("")}</div></div>`;
+  }).join(""):"<p>まだレシピは見つかっていません。</p>";
+}
+$("bookBtn").onclick=()=>{closeUtilityWindows("book");playSE("open",.45);$("book").classList.add("show");renderBook()};
+$("bookClose").onclick=()=>{playSE("cancel",.4);$("book").classList.remove("show")};
+function openLog(){closeUtilityWindows("log");playSE("open",.45);renderLog();$("logOverlay").classList.add("show")}
+$("logBtn").onclick=openLog;
+$("logClose").onclick=()=>{playSE("cancel",.4);$("logOverlay").classList.remove("show")};
+$("optionsBtn").onclick=()=>{closeUtilityWindows("options");playSE("open",.4);$("optionsOverlay").classList.add("show")};
+$("optionsClose").onclick=()=>{playSE("cancel",.35);$("optionsOverlay").classList.remove("show");document.body.classList.remove("title-options")};
+$("optionLoadBtn").onclick=()=>{playSE("open",.35);openLoadWindow()};
+$("optionTitleBtn").onclick=()=>{playSE("cancel",.35);returnToTitle()};
+$("loadClose").onclick=()=>{playSE("cancel",.3);$("loadOverlay").classList.remove("show")};
+$("loadDayList").onclick=event=>{
+  const button=event.target.closest("[data-load-day]");if(!button)return;
+  const save=getDaySaves()[button.dataset.loadDay];if(!save)return;
+  playSE("select",.4);beginGame(save);
+};
+function updateAudioOptions(){
+  $("optionBgmMute").textContent=bgmEnabled?"ON":"OFF";$("optionBgmMute").classList.toggle("muted",!bgmEnabled);
+  $("optionSeMute").textContent=seEnabled?"ON":"OFF";$("optionSeMute").classList.toggle("muted",!seEnabled);
+  const bgm=Math.round(bgmVolume*100),se=Math.round(seVolume*100);
+  $("optionBgmVolume").value=bgm;$("optionBgmValue").textContent=bgm;$("musicVolume").value=bgm;
+  $("optionSeVolume").value=se;$("optionSeValue").textContent=se;
+  music.volume=bgmVolume;
+}
+$("optionBgmMute").onclick=()=>{
+  bgmEnabled=!bgmEnabled;
+  if(!bgmEnabled)music.pause();else if(musicIndex<0)ensureMusicStarted();else music.play().catch(()=>{});
+  updateAudioOptions();saveAudioSettings();
+};
+$("optionSeMute").onclick=()=>{seEnabled=!seEnabled;updateAudioOptions();saveAudioSettings();if(seEnabled)playSE("select",.3)};
+$("optionBgmVolume").oninput=event=>{
+  bgmVolume=event.target.value/100;music.volume=bgmVolume;$("musicVolume").value=event.target.value;$("optionBgmValue").textContent=event.target.value;saveAudioSettings();
+};
+$("optionSeVolume").oninput=event=>{seVolume=event.target.value/100;$("optionSeValue").textContent=event.target.value;saveAudioSettings()};
+["book","logOverlay","optionsOverlay","loadOverlay"].forEach(id=>$(id).addEventListener("click",event=>{
+  if(event.target===$(id)){playSE("cancel",.3);$(id).classList.remove("show")}
+}));
+$("game").addEventListener("wheel",event=>{
+  if(event.deltaY>=-25||event.target.closest(".modal,#musicPlayer")||$("book").classList.contains("show")||$("logOverlay").classList.contains("show")||$("optionsOverlay").classList.contains("show")||$("loadOverlay").classList.contains("show")||$("dayTransition").classList.contains("show")||$("end").classList.contains("show"))return;
+  event.preventDefault();openLog();
+},{passive:false});
+updateAudioOptions();
+$("debugDays").querySelectorAll("button").forEach(button=>button.onclick=()=>{
+  playSE("select",.35);
+  const day=Number(button.dataset.day),target=story.findIndex(node=>node.day===day);
+  if(target<0)return;
+  gameStarted=true;$("titleScreen").classList.add("hidden");document.body.classList.remove("title-options");
+  story.forEach(node=>{delete node._castDone;delete node._entered});
+  sceneToken++;entranceBusy=false;visible=[];actors([],"");step=target;
+  clearStill();toggleUI(false);
+  $("mix").classList.remove("show");$("book").classList.remove("show");$("logOverlay").classList.remove("show");$("optionsOverlay").classList.remove("show");$("loadOverlay").classList.remove("show");$("end").classList.remove("show");
+  $("game").classList.remove("mixing","entrance-lock");$("dayTransition").classList.remove("show");
+  render();
+});
+const legacySave=JSON.parse(localStorage.getItem("smokemokeSave")||"null");
+if(!Object.keys(getDaySaves()).length&&legacySave?.currentDay){
+  localStorage.setItem("smokemokeDaySaves",JSON.stringify({[legacySave.currentDay]:{currentDay:legacySave.currentDay,routeFlags:legacySave.routeFlags||{},updatedAt:legacySave.updatedAt||Date.now()}}));
+}
+$("titleNewBtn").onclick=()=>{playSE("select",.4);beginGame()};
+$("titleContinueBtn").onclick=()=>{if(Object.keys(getDaySaves()).length){playSE("open",.4);openContinuePicker()}};
+$("titleCgBtn").onclick=()=>{playSE("open",.4);renderCgGallery();$("cgGallery").classList.add("show")};
+$("cgClose").onclick=()=>{playSE("cancel",.3);$("cgProfile").classList.remove("show");$("cgViewer").classList.remove("show");$("cgGallery").classList.remove("show")};
+$("cgGrid").onclick=event=>{
+  const card=event.target.closest("[data-cg-index]"),profile=event.target.closest("[data-profile]"),replay=event.target.closest("[data-ending-replay]");
+  if(card){playSE("select",.3);openCgViewer(Number(card.dataset.cgIndex))}
+  else if(profile){playSE("select",.3);openCharacterProfile(profile.dataset.profile)}
+  else if(replay){
+    playSE("select",.3);$("cgViewer").classList.remove("show");$("cgGallery").classList.remove("show");
+    $("titleScreen").classList.add("hidden");startEnding();
+  }
+};
+$("cgEnlarge").onclick=()=>{
+  if(cgViewIndex<0)return;
+  playSE("open",.25);$("cgViewerImage").src=$("cgStageImage").src;$("cgViewerTitle").textContent=cgCatalog[cgViewIndex][1];
+  $("cgPrev").style.display="";$("cgNext").style.display="";$("cgViewer").classList.add("show");
+};
+$("cgViewer").onclick=()=>{playSE("cancel",.2);$("cgViewer").classList.remove("show")};
+$("cgBack").onclick=()=>{playSE("cancel",.25);$("cgViewer").classList.remove("show")};
+$("cgPrev").onclick=()=>{playSE("select",.25);moveCg(-1)};
+$("cgNext").onclick=()=>{playSE("select",.25);moveCg(1)};
+$("continueCancel").onclick=()=>{playSE("cancel",.3);$("continuePicker").classList.remove("show")};
+$("continueDayList").onclick=event=>{
+  const button=event.target.closest("[data-continue-day]");if(!button)return;
+  const save=getDaySaves()[button.dataset.continueDay];if(!save)return;
+  playSE("select",.4);$("continuePicker").classList.remove("show");beginGame(save);
+};
+$("titleOptionsBtn").onclick=()=>{
+  closeUtilityWindows("options");playSE("open",.4);document.body.classList.add("title-options");$("optionsOverlay").classList.add("show");
+};
+$("endingPause").onclick=()=>{
+  const animation=$("endingScroll").getAnimations().find(item=>item.animationName==="creditsRoll");
+  endingUserPaused=!endingUserPaused;
+  if(animation){if(endingUserPaused)animation.pause();else animation.play()}
+  $("endingPause").textContent=endingUserPaused?"再開":"一時停止";
+};
+$("endingFast").onclick=()=>{
+  const button=$("endingFast"),fast=button.dataset.fast!=="true";
+  button.dataset.fast=String(fast);button.textContent=fast?"通常速度":"早送り";
+  const animation=$("endingScroll").getAnimations().find(item=>item.animationName==="creditsRoll");
+  if(animation)animation.playbackRate=fast?2:1;
+};
+$("endingSkip").onclick=()=>{
+  endingUserPaused=false;
+  $("end").classList.remove("rolling","paused");$("endingScroll").style.transform="translateY(calc(-100% + 15vh))";
+  $("endingScroll").querySelectorAll(".ending-chapter").forEach(chapter=>chapter.classList.add("reveal-expression"));
+  $("endingPause").textContent="一時停止";$("endingFast").dataset.fast="false";$("endingFast").textContent="早送り";
+};
+$("endingTitle").onclick=()=>{playSE("cancel",.3);$("endingFast").dataset.fast="false";$("endingScroll").style.transform="";returnToTitle()};
+
+const preloadedImages=[];
+async function preloadGameImages(){
+  const paths=new Set([
+    "assets/smokemoke-logo.png","assets/cafe-rear-wide.png","assets/counter-wide.png",
+    "assets/morrow-creek-night.png","assets/newspaper-base.png","assets/open-coffee.png"
+  ]);
+  document.querySelectorAll("img[src]").forEach(image=>paths.add(image.getAttribute("src")));
+  ["rowan","mara","june","reiji","kai","teo","elsie","lector"].forEach(id=>
+    ["neutral","smile","concern","special"].forEach(expression=>paths.add(`assets/expressions/${id}-${expression}.png`)));
+  cgCatalog.forEach(([id])=>paths.add(`assets/stills/${id}.png`));
+  Object.values(recipeArt).forEach(file=>paths.add(`assets/recipes/${file}.png`));
+  Object.entries(ingredientData).forEach(([type,data])=>{
+    [...Object.keys(data.bases),...Object.keys(data.accents)].forEach(key=>paths.add(`assets/ingredients/${type}-${key}.png`));
+  });
+  const list=[...paths],bar=$("loadingBar"),label=$("loadingText");let complete=0;
+  const jobs=list.map(src=>new Promise(resolve=>{
+    const image=new Image();preloadedImages.push(image);let done=false;
+    const finish=()=>{if(done)return;done=true;complete++;const percent=Math.round(complete/list.length*100);bar.style.width=`${percent}%`;label.textContent=`LOADING ${percent}%`;resolve()};
+    image.onload=finish;image.onerror=finish;image.src=src;
+    if(image.complete)finish();
+  }));
+  await Promise.race([Promise.all(jobs),new Promise(resolve=>setTimeout(resolve,9000))]);
+  bar.style.width="100%";label.textContent="OPEN";
+  setTimeout(()=>$("loadingScreen").classList.add("done"),220);
+}
+renderBook();updateAudioOptions();updateContinueUI();updateCgCount();updateSkipUI();
+loadMusic(randomTrack(),false,false);
+window.addEventListener("pointerdown",ensureMusicStarted,{once:true,capture:true});
+preloadGameImages();
+</script>
+</body>
+</html>
