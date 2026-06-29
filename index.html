@@ -434,6 +434,7 @@
       #dialogueBubble{width:78%;min-width:230px}}
     @media (orientation:landscape) and (max-height:500px){
       #game{width:100vw;height:100vh;max-width:none;max-height:none;aspect-ratio:auto}
+      #ambience,.wisp{display:none}
       .title-panel{left:4%;top:4%;width:470px}
       .title-logo{width:285px;height:105px;margin:0 0 8px -16px}
       .title-menu{width:440px;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 11px}
@@ -606,7 +607,7 @@
     </div>
     <div class="music-foot"><span>VOL</span><input id="musicVolume" type="range" min="0" max="100" value="55"><span id="musicMode">ALL SHUFFLE</span></div>
   </section>
-  <audio id="musicAudio" preload="auto"></audio>
+  <audio id="musicAudio" preload="metadata"></audio>
   <section id="dialogueBubble"><div id="speaker"></div><div id="text"></div><div id="advance">▼</div></section>
 
   <section id="mix">
@@ -1736,6 +1737,10 @@ const $=id=>document.getElementById(id);
 const savedAudioSettings=(()=>{
   try{return JSON.parse(localStorage.getItem("smokemokeAudioSettings")||"{}")}catch{return {}}
 })();
+const mobilePerfQuery=window.matchMedia("(pointer:coarse), (orientation:landscape) and (max-height:500px)");
+function isMobilePerfMode(){
+  return mobilePerfQuery.matches||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
 let audioCtx=null,masterGain=null,
   seEnabled=savedAudioSettings.seEnabled??true,bgmEnabled=savedAudioSettings.bgmEnabled??true,
   seVolume=Number.isFinite(savedAudioSettings.seVolume)?savedAudioSettings.seVolume:.75,
@@ -1812,7 +1817,7 @@ function baseTypeDelayMs(){
 function typeDelayMs(){
   const base=baseTypeDelayMs();
   if(base<=0)return 0;
-  return Math.max(6,Math.round(base*(currentLineVoiceProfile?.delayMult??1)));
+  return Math.max(isMobilePerfMode()?12:6,Math.round(base*(currentLineVoiceProfile?.delayMult??1)));
 }
 function baseTypeSeIntervalMs(){
   return [34,28,22,18,14,0][Math.max(0,Math.min(5,Number(textSpeed)-1))];
@@ -1820,7 +1825,7 @@ function baseTypeSeIntervalMs(){
 function typeSeIntervalMs(){
   const base=baseTypeSeIntervalMs();
   if(base<=0)return 0;
-  return Math.max(8,Math.round(base*(currentLineVoiceProfile?.seIntervalMult??1)));
+  return Math.max(isMobilePerfMode()?24:8,Math.round(base*(currentLineVoiceProfile?.seIntervalMult??1)*(isMobilePerfMode()?1.7:1)));
 }
 function buildCurrentTypewriterVoiceProfile(){
   if(!currentLineSpeaker)return null;
@@ -1843,6 +1848,9 @@ function maybePlayTypeSE(char){
   if(!voice)return;
   playTypewriterSE(.32,{rate:voice.rate,volumeMultiplier:voice.volume});
 }
+function typewriterStepSize(){
+  return isMobilePerfMode()&&baseTypeDelayMs()>0?2:1;
+}
 function finishLineDisplay(){
   typewriterActive=false;
   typewriterIndex=currentLineText.length;
@@ -1856,7 +1864,7 @@ function revealCurrentLineImmediately(){
 }
 function stepTypewriter(){
   if(!typewriterActive)return;
-  typewriterIndex++;
+  typewriterIndex=Math.min(currentLineText.length,typewriterIndex+typewriterStepSize());
   const nextChar=currentLineText[typewriterIndex-1]||"";
   $("text").textContent=currentLineText.slice(0,typewriterIndex);
   maybePlayTypeSE(nextChar);
@@ -2653,15 +2661,18 @@ $("endingTitle").onclick=()=>{playSE("cancel",.3);$("endingFast").dataset.fast="
 
 const preloadedImages=[];
 async function preloadGameImages(){
+  const mobileLite=isMobilePerfMode();
   const paths=new Set([
     "assets/smokemoke-logo.png","assets/cafe-rear-wide.png","assets/counter-wide.png",
     "assets/morrow-creek-night.png","assets/newspaper-base.png","assets/open-coffee.png"
   ]);
   document.querySelectorAll("img[src]").forEach(image=>paths.add(image.getAttribute("src")));
   ["rowan","mara","june","reiji","kai","teo","elsie","lector"].forEach(id=>
-    ["neutral","smile","concern","special"].forEach(expression=>paths.add(`assets/expressions/${id}-${expression}.png`)));
-  cgCatalog.forEach(([id])=>paths.add(`assets/stills/${id}.png`));
-  Object.values(recipeArt).forEach(file=>paths.add(`assets/recipes/${file}.png`));
+    (mobileLite?["neutral","smile"]:["neutral","smile","concern","special"]).forEach(expression=>paths.add(`assets/expressions/${id}-${expression}.png`)));
+  if(!mobileLite){
+    cgCatalog.forEach(([id])=>paths.add(`assets/stills/${id}.png`));
+    Object.values(recipeArt).forEach(file=>paths.add(`assets/recipes/${file}.png`));
+  }
   Object.entries(ingredientData).forEach(([type,data])=>{
     [...Object.keys(data.bases),...Object.keys(data.accents)].forEach(key=>paths.add(`assets/ingredients/${type}-${key}.png`));
   });
@@ -2677,7 +2688,7 @@ async function preloadGameImages(){
   setTimeout(()=>$("loadingScreen").classList.add("done"),220);
 }
 renderBook();updateAudioOptions();updateContinueUI();updateCgCount();updateSkipUI();
-loadMusic(randomTrack(),false,false);
+if(!isMobilePerfMode())loadMusic(randomTrack(),false,false);else updateMusicUI();
 window.addEventListener("pointerdown",ensureMusicStarted,{once:true,capture:true});
 preloadGameImages();
 </script>
