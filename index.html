@@ -1748,7 +1748,9 @@ const mobilePerfQuery=window.matchMedia("(pointer:coarse), (orientation:landscap
 function isMobilePerfMode(){
   return mobilePerfQuery.matches||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
-let audioCtx=null,masterGain=null,
+let audioCtx=null,masterGain=null,bgmGain=null,seGain=null,musicSource=null,webAudioRoutingReady=false;
+const seSources=new Map();
+let
   seEnabled=savedAudioSettings.seEnabled??true,bgmEnabled=savedAudioSettings.bgmEnabled??true,
   seVolume=Number.isFinite(savedAudioSettings.seVolume)?savedAudioSettings.seVolume:.75,
   bgmVolume=Number.isFinite(savedAudioSettings.bgmVolume)?savedAudioSettings.bgmVolume:.55,
@@ -1801,7 +1803,7 @@ function playSE(key,volume=.55,options={}){
     if("mozPreservesPitch" in sound)sound.mozPreservesPitch=false;
     if("webkitPreservesPitch" in sound)sound.webkitPreservesPitch=false;
   }
-  sound.volume=Math.min(1,volume*seVolume*(options.volumeMultiplier??1));
+  sound.volume=Math.min(1,volume*(options.volumeMultiplier??1)*(webAudioRoutingReady?1:seVolume));
   sound.play().catch(()=>{});
 }
 function warmSeCache(){
@@ -1823,7 +1825,7 @@ function playTypewriterSE(volume=.32,options={}){
   }else{
     sound.playbackRate=1;
   }
-  sound.volume=Math.min(1,volume*seVolume*(options.volumeMultiplier??1));
+  sound.volume=Math.min(1,volume*(options.volumeMultiplier??1)*(webAudioRoutingReady?1:seVolume));
   sound.play().catch(()=>{});
 }
 function clearTypewriterTimer(){
@@ -1919,9 +1921,31 @@ function showDialogueText(text){
   stepTypewriter();
 }
 function initAudio(){
-  if(audioCtx)return;
-  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  masterGain=audioCtx.createGain();masterGain.gain.value=.075;masterGain.connect(audioCtx.destination);
+  if(audioCtx){
+    if(audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
+    return;
+  }
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return;
+  try{
+    audioCtx=new AudioContextClass();
+    masterGain=audioCtx.createGain();masterGain.gain.value=.075;masterGain.connect(audioCtx.destination);
+    bgmGain=audioCtx.createGain();bgmGain.gain.value=bgmEnabled?bgmVolume:0;bgmGain.connect(audioCtx.destination);
+    seGain=audioCtx.createGain();seGain.gain.value=seEnabled?seVolume:0;seGain.connect(audioCtx.destination);
+    musicSource=audioCtx.createMediaElementSource(music);musicSource.connect(bgmGain);
+    Object.values(sePools).flat().forEach(sound=>{
+      const source=audioCtx.createMediaElementSource(sound);source.connect(seGain);seSources.set(sound,source);
+    });
+    typeSeVoices.forEach(sound=>{
+      const source=audioCtx.createMediaElementSource(sound);source.connect(seGain);seSources.set(sound,source);
+    });
+    webAudioRoutingReady=true;
+    music.volume=1;
+    audioCtx.resume().catch(()=>{});
+  }catch(error){
+    webAudioRoutingReady=false;
+    console.warn("Web Audio routing unavailable",error);
+  }
 }
 function sfx(frequency=420,duration=.08,volume=.07){
   if(!seEnabled)return;initAudio();
@@ -2008,13 +2032,17 @@ function handleVisibilityAudio(){
 }
 function reshuffleMusicForDay(){
   if(!musicStarted||musicIndex<0)return;
-  const targetVolume=Number($("musicVolume").value)/100;
-  const startVolume=music.volume,startedAt=Date.now(),fadeMs=720;
+  const targetVolume=bgmVolume;
+  const startVolume=webAudioRoutingReady?bgmGain.gain.value:music.volume,startedAt=Date.now(),fadeMs=720;
   const fade=setInterval(()=>{
     const progress=Math.min(1,(Date.now()-startedAt)/fadeMs);
-    music.volume=startVolume*(1-progress);
+    const faded=startVolume*(1-progress);
+    if(webAudioRoutingReady)bgmGain.gain.setValueAtTime(faded,audioCtx.currentTime);
+    else music.volume=faded;
     if(progress>=1){
-      clearInterval(fade);music.pause();music.volume=targetVolume;
+      clearInterval(fade);music.pause();
+      if(webAudioRoutingReady)bgmGain.gain.setValueAtTime(bgmEnabled?targetVolume:0,audioCtx.currentTime);
+      else music.volume=targetVolume;
       musicHistory=[];loadMusic(randomTrack(),true,false);
     }
   },32);
@@ -2049,7 +2077,9 @@ $("musicFavRepeat").onclick=()=>{
 $("musicSeek").oninput=event=>{if(music.duration)music.currentTime=event.target.value/1000*music.duration};
 function setBgmVolumeValue(value){
   const numeric=Math.max(0,Math.min(100,Number(value)||0));
-  bgmVolume=numeric/100;music.volume=bgmVolume;
+  bgmVolume=numeric/100;
+  if(webAudioRoutingReady)bgmGain.gain.setValueAtTime(bgmEnabled?bgmVolume:0,audioCtx.currentTime);
+  else music.volume=bgmVolume;
   $("musicVolume").value=numeric;$("optionBgmValue").textContent=numeric;
   updateVolumeStepButtons("optionBgmSteps",numeric);
   saveAudioSettings();
@@ -2057,6 +2087,7 @@ function setBgmVolumeValue(value){
 function setSeVolumeValue(value){
   const numeric=Math.max(0,Math.min(100,Number(value)||0));
   seVolume=numeric/100;$("optionSeValue").textContent=numeric;
+  if(webAudioRoutingReady)seGain.gain.setValueAtTime(seEnabled?seVolume:0,audioCtx.currentTime);
   updateVolumeStepButtons("optionSeSteps",numeric);
   saveAudioSettings();
 }
@@ -2625,14 +2656,22 @@ function updateAudioOptions(){
   $("optionBgmValue").textContent=bgm;$("musicVolume").value=bgm;updateVolumeStepButtons("optionBgmSteps",bgm);
   $("optionSeValue").textContent=se;updateVolumeStepButtons("optionSeSteps",se);
   $("optionTextSpeed").value=textSpeed;$("optionTextSpeedValue").textContent=typeSpeedLabel(textSpeed);
-  music.volume=bgmVolume;
+  if(webAudioRoutingReady){
+    bgmGain.gain.setValueAtTime(bgmEnabled?bgmVolume:0,audioCtx.currentTime);
+    seGain.gain.setValueAtTime(seEnabled?seVolume:0,audioCtx.currentTime);
+  }else music.volume=bgmVolume;
 }
 $("optionBgmMute").onclick=()=>{
   bgmEnabled=!bgmEnabled;
+  if(webAudioRoutingReady)bgmGain.gain.setValueAtTime(bgmEnabled?bgmVolume:0,audioCtx.currentTime);
   if(!bgmEnabled)music.pause();else if(document.hidden)resumeMusicAfterVisible=false;else if(musicIndex<0)ensureMusicStarted();else music.play().catch(()=>{});
   updateAudioOptions();saveAudioSettings();
 };
-$("optionSeMute").onclick=()=>{seEnabled=!seEnabled;updateAudioOptions();saveAudioSettings();if(seEnabled)playSE("select",.3)};
+$("optionSeMute").onclick=()=>{
+  seEnabled=!seEnabled;
+  if(webAudioRoutingReady)seGain.gain.setValueAtTime(seEnabled?seVolume:0,audioCtx.currentTime);
+  updateAudioOptions();saveAudioSettings();if(seEnabled)playSE("select",.3);
+};
 $("optionBgmSteps").onclick=event=>{
   const button=event.target.closest("[data-volume]");if(!button)return;
   setBgmVolumeValue(button.dataset.volume);
@@ -2836,7 +2875,7 @@ async function preloadGameImages(){
 }
 renderBook();updateAudioOptions();updateContinueUI();updateCgCount();updateSkipUI();
 if(!isMobilePerfMode())loadMusic(randomTrack(),false,false);else updateMusicUI();
-window.addEventListener("pointerdown",ensureMusicStarted,{once:true,capture:true});
+window.addEventListener("pointerdown",()=>{initAudio();ensureMusicStarted()},{once:true,capture:true});
 window.addEventListener("pointerdown",warmSeCache,{once:true,capture:true});
 installMobileFastTap();
 installTouchRanges();
