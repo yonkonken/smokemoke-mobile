@@ -281,6 +281,9 @@
     .option-row button{padding:8px;border:1px solid #8d7a63;background:#292534;color:#f1ddbd;cursor:pointer}
     .option-row button.muted{color:#9e9296;border-color:#625964;background:#191720}
     .option-row input{width:100%;accent-color:#d88b79;touch-action:none}
+    .volume-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+    .volume-steps button{min-width:0;padding:9px 2px;font-size:11px;color:#aaa0a7;border-color:#504958;background:#171620}
+    .volume-steps button.active{color:#fff0d0;border-color:#d49a70;background:#5b3542;box-shadow:inset 0 0 0 1px #e0ad7a55}
     #cast.final-cast{inset:4% 4% 10%;gap:0;justify-content:center;overflow:visible}
     #cast.final-cast .actor{flex:0 0 31%;width:31%;height:94%;z-index:1}
     #cast.final-cast .actor.dim{opacity:.56;filter:brightness(.62) drop-shadow(5px 6px #06070c)}
@@ -663,8 +666,8 @@
   </div></section>
   <section id="optionsOverlay" class="overlay"><div class="modal"><button class="close" id="optionsClose">閉じる</button>
     <h2>オプション</h2>
-    <div class="option-row"><strong>BGM</strong><button id="optionBgmMute">ON</button><input id="optionBgmVolume" type="range" min="0" max="100" value="55"><span id="optionBgmValue">55</span></div>
-    <div class="option-row"><strong>SE</strong><button id="optionSeMute">ON</button><input id="optionSeVolume" type="range" min="0" max="100" value="75"><span id="optionSeValue">75</span></div>
+    <div class="option-row"><strong>BGM</strong><button id="optionBgmMute">ON</button><div id="optionBgmSteps" class="volume-steps" aria-label="BGM音量"><button data-volume="0">0</button><button data-volume="25">25</button><button data-volume="50">50</button><button data-volume="75">75</button><button data-volume="100">100</button></div><span id="optionBgmValue">55</span></div>
+    <div class="option-row"><strong>SE</strong><button id="optionSeMute">ON</button><div id="optionSeSteps" class="volume-steps" aria-label="SE音量"><button data-volume="0">0</button><button data-volume="25">25</button><button data-volume="50">50</button><button data-volume="75">75</button><button data-volume="100">100</button></div><span id="optionSeValue">75</span></div>
     <div class="option-row"><strong>TEXT</strong><input id="optionTextSpeed" type="range" min="1" max="6" value="4"><span id="optionTextSpeedValue">4</span></div>
     <div class="option-actions"><button id="optionLoadBtn">ロードする</button><button id="optionTitleBtn">タイトル画面に戻る</button></div>
     <div class="debug-options"><h3>DEBUG — DAY JUMP</h3>
@@ -2047,13 +2050,21 @@ $("musicSeek").oninput=event=>{if(music.duration)music.currentTime=event.target.
 function setBgmVolumeValue(value){
   const numeric=Math.max(0,Math.min(100,Number(value)||0));
   bgmVolume=numeric/100;music.volume=bgmVolume;
-  $("musicVolume").value=numeric;$("optionBgmVolume").value=numeric;$("optionBgmValue").textContent=numeric;
+  $("musicVolume").value=numeric;$("optionBgmValue").textContent=numeric;
+  updateVolumeStepButtons("optionBgmSteps",numeric);
   saveAudioSettings();
 }
 function setSeVolumeValue(value){
   const numeric=Math.max(0,Math.min(100,Number(value)||0));
-  seVolume=numeric/100;$("optionSeVolume").value=numeric;$("optionSeValue").textContent=numeric;
+  seVolume=numeric/100;$("optionSeValue").textContent=numeric;
+  updateVolumeStepButtons("optionSeSteps",numeric);
   saveAudioSettings();
+}
+function updateVolumeStepButtons(id,value){
+  const buttons=[...$(id).querySelectorAll("[data-volume]")];
+  const closest=buttons.reduce((best,button)=>
+    Math.abs(Number(button.dataset.volume)-value)<Math.abs(Number(best.dataset.volume)-value)?button:best);
+  buttons.forEach(button=>button.classList.toggle("active",button===closest));
 }
 $("musicVolume").oninput=event=>setBgmVolumeValue(event.target.value);
 $("musicVolume").onchange=event=>setBgmVolumeValue(event.target.value);
@@ -2611,8 +2622,8 @@ function updateAudioOptions(){
   $("optionBgmMute").textContent=bgmEnabled?"ON":"OFF";$("optionBgmMute").classList.toggle("muted",!bgmEnabled);
   $("optionSeMute").textContent=seEnabled?"ON":"OFF";$("optionSeMute").classList.toggle("muted",!seEnabled);
   const bgm=Math.round(bgmVolume*100),se=Math.round(seVolume*100);
-  $("optionBgmVolume").value=bgm;$("optionBgmValue").textContent=bgm;$("musicVolume").value=bgm;
-  $("optionSeVolume").value=se;$("optionSeValue").textContent=se;
+  $("optionBgmValue").textContent=bgm;$("musicVolume").value=bgm;updateVolumeStepButtons("optionBgmSteps",bgm);
+  $("optionSeValue").textContent=se;updateVolumeStepButtons("optionSeSteps",se);
   $("optionTextSpeed").value=textSpeed;$("optionTextSpeedValue").textContent=typeSpeedLabel(textSpeed);
   music.volume=bgmVolume;
 }
@@ -2622,10 +2633,14 @@ $("optionBgmMute").onclick=()=>{
   updateAudioOptions();saveAudioSettings();
 };
 $("optionSeMute").onclick=()=>{seEnabled=!seEnabled;updateAudioOptions();saveAudioSettings();if(seEnabled)playSE("select",.3)};
-$("optionBgmVolume").oninput=event=>setBgmVolumeValue(event.target.value);
-$("optionBgmVolume").onchange=event=>setBgmVolumeValue(event.target.value);
-$("optionSeVolume").oninput=event=>setSeVolumeValue(event.target.value);
-$("optionSeVolume").onchange=event=>{setSeVolumeValue(event.target.value);playSE("select",.45)};
+$("optionBgmSteps").onclick=event=>{
+  const button=event.target.closest("[data-volume]");if(!button)return;
+  setBgmVolumeValue(button.dataset.volume);
+};
+$("optionSeSteps").onclick=event=>{
+  const button=event.target.closest("[data-volume]");if(!button)return;
+  setSeVolumeValue(button.dataset.volume);playSE("select",.45);
+};
 $("optionTextSpeed").oninput=event=>{
   textSpeed=Number(event.target.value);
   $("optionTextSpeedValue").textContent=typeSpeedLabel(textSpeed);
