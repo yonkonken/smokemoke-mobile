@@ -46,13 +46,13 @@
     .actor-name{display:none}
     .rowan{--accent:#d6b778}.rowan .portrait{--body-scale:.88;--lift:5px;--breath-period:4.35s;--breath-delay:-.4s;background-image:url("assets/expressions/rowan-neutral.png")}
     .mara{--accent:#e27fa9}.mara .portrait{--body-scale:.96;--breath-period:3.75s;--breath-delay:-1.1s;--breath-scale:1.014;background-image:url("assets/expressions/mara-neutral.png")}
-    .june{--accent:#99d0bd}.june .portrait{--body-scale:1.08;--lift:-2px;--breath-period:5.05s;--breath-delay:-2.1s;--breath-rise:1px;background-image:url("assets/expressions/june-neutral.png")}
+    .june{--accent:#99d0bd}.june .portrait{--body-scale:1.14;--lift:-18px;--breath-period:5.05s;--breath-delay:-2.1s;--breath-rise:1px;background-image:url("assets/expressions/june-neutral.png")}
     .reiji{--accent:#df4c51}.reiji .portrait{--body-scale:1.3;--lift:0px;--breath-period:5.6s;--breath-delay:-.7s;--breath-scale:1.009;--breath-rise:1px;background-image:url("assets/expressions/reiji-neutral.png")}
     .kai{--accent:#73d7eb}.kai .portrait{--body-scale:1.01;--breath-period:3.5s;--breath-delay:-1.35s;--breath-scale:1.012;--breath-rise:1px;background-image:url("assets/expressions/kai-neutral.png")}
     .teo{--accent:#b6a4ff}.teo .portrait{--body-scale:.92;--breath-period:5.8s;--breath-delay:-.8s;--breath-scale:1.001;--breath-rise:0px;background-image:url("assets/expressions/teo-neutral.png")}
     .elsie{--accent:#e68fc7}.elsie .portrait{--body-scale:.98;--breath-period:4.65s;--breath-delay:-2.4s;--breath-scale:1.01;filter:drop-shadow(0 0 8px #c98acb77);background-image:url("assets/expressions/elsie-neutral.png")}
     .elsie .portrait.expr-special{--body-scale:.9;--lift:0px}
-    .nessa{--accent:#9bc9ff}.nessa .portrait{--body-scale:1.7;--lift:-68px;--breath-period:5.4s;--breath-delay:-1.7s;--breath-scale:1.009;--breath-rise:1px;background-image:url("assets/expressions/lector-neutral.png")}
+    .nessa{--accent:#9bc9ff}.nessa .portrait{--body-scale:2.02;--lift:-118px;--breath-period:5.4s;--breath-delay:-1.7s;--breath-scale:1.009;--breath-rise:1px;background-image:url("assets/expressions/lector-neutral.png")}
     #foregroundCounter{position:absolute;z-index:6;inset:0;
       background:url("assets/counter-wide.png") center/auto 100% no-repeat;pointer-events:none}
     #ambience{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:7}
@@ -73,7 +73,9 @@
     #speaker{color:var(--speaker-color);font-weight:bold;margin-bottom:6px;min-height:18px}
     .barista #speaker,.narrator #speaker{color:var(--gold)}
     #text{font-size:18px;line-height:1.75;white-space:pre-wrap}
-    #advance{position:absolute;right:9px;bottom:5px;color:#8a3d5e;animation:blink 1s step-end infinite}
+    #advance{position:absolute;right:9px;bottom:5px;color:var(--speaker-color);animation:blink 1s step-end infinite}
+    #advance.typing{opacity:0;animation:none}
+    #dialogueBubble.barista #advance,#dialogueBubble.narrator #advance{color:var(--gold)}
     @keyframes blink{50%{opacity:.2}}
     #utilityBar{position:absolute;z-index:11;right:16px;top:14px;display:flex;gap:8px}
     .top-button{position:relative;min-width:76px;height:42px;display:grid;grid-template-columns:24px 1fr;align-items:center;gap:7px;
@@ -366,7 +368,11 @@
     #cgViewer .cg-view-title,#cgViewer .cg-view-controls{display:none}
     #cgProfile{display:none;position:absolute;inset:0;grid-template-columns:42% 58%;background:#10131d;
       border:2px solid #756354;box-shadow:14px 16px #010208;overflow:hidden}
-    #cgProfile.show{display:grid}#cgProfile img{width:100%;height:100%;object-fit:contain;object-position:center bottom;background:#090c14;image-rendering:pixelated}
+    #cgProfile.show{display:grid}
+    .cg-profile-art-wrap{position:relative;overflow:hidden;background:#090c14}
+    .cg-profile-art{width:100%;height:100%;object-fit:contain;object-position:center bottom;background:#090c14;image-rendering:pixelated;transform-origin:center bottom}
+    .cg-profile-art.june{object-position:center 62%;transform:scale(1.1)}
+    .cg-profile-art.lector{object-position:center bottom;transform:scale(1.26)}
     .cg-profile-copy{padding:32px 38px;overflow:auto;text-align:left}.cg-profile-copy small{color:#78c8b0;letter-spacing:4px}
     .cg-profile-copy h2{color:#e8c079;margin:8px 0 18px;font-size:30px}.cg-profile-copy p{line-height:1.9;white-space:pre-line;color:#d4ccd0}
     .cg-section{grid-column:1/-1;margin-top:14px;padding:12px 2px 4px;color:#7fc9b3;border-bottom:1px solid #4a4351;letter-spacing:4px}
@@ -435,6 +441,28 @@
       .title-menu button span{right:8px;font-size:8px}
       .title-version{margin-top:11px}
       .title-cafe{right:-7%;bottom:-15%;width:64%;height:84%}
+
+      #cgGallery{padding:14px 16px}
+      .cg-head{gap:10px;padding-bottom:8px}
+      .cg-head h2{font-size:18px;letter-spacing:3px}
+      .cg-head span{font-size:11px}
+      .cg-close{padding:6px 10px;font-size:11px}
+      .cg-layout{grid-template-columns:minmax(0,1fr) 206px;gap:10px;padding-top:10px}
+      #cgStageTitle{left:8px;top:8px;padding:5px 8px;font-size:10px;letter-spacing:1px}
+      #cgEnlarge{right:8px;bottom:8px;padding:7px 10px;font-size:10px}
+      #cgGrid{gap:8px;padding:1px 4px 12px 1px}
+      .cg-card{box-shadow:4px 5px #04050a}
+      .cg-card b{padding:6px 7px;font-size:10px}
+      #cgProfile{grid-template-columns:30% 70%}
+      .cg-profile-copy{padding:14px 16px 16px}
+      .cg-profile-copy small{font-size:10px;letter-spacing:2px}
+      .cg-profile-copy h2{margin:5px 0 10px;font-size:20px}
+      .cg-profile-copy p{font-size:11px;line-height:1.6}
+      .cg-section{margin-top:8px;padding:8px 1px 3px;font-size:11px;letter-spacing:2px}
+      .cg-card.profile img{object-position:center 12%}
+
+      .ending-controls{right:8px;bottom:8px;gap:6px}
+      .ending-controls button{padding:7px 9px;font-size:10px;letter-spacing:1px}
 
       #mix{inset:1.5%;padding:7px 10px 9px;border-width:3px}
       .mix-header{height:43px;grid-template-columns:145px 1fr;gap:8px;margin-bottom:5px}
@@ -632,6 +660,7 @@
     <h2>オプション</h2>
     <div class="option-row"><strong>BGM</strong><button id="optionBgmMute">ON</button><input id="optionBgmVolume" type="range" min="0" max="100" value="55"><span id="optionBgmValue">55</span></div>
     <div class="option-row"><strong>SE</strong><button id="optionSeMute">ON</button><input id="optionSeVolume" type="range" min="0" max="100" value="75"><span id="optionSeValue">75</span></div>
+    <div class="option-row"><strong>TEXT</strong><input id="optionTextSpeed" type="range" min="1" max="6" value="4"><span id="optionTextSpeedValue">4</span></div>
     <div class="option-actions"><button id="optionLoadBtn">ロードする</button><button id="optionTitleBtn">タイトル画面に戻る</button></div>
     <div class="debug-options"><h3>DEBUG — DAY JUMP</h3>
       <nav id="debugDays" aria-label="デバッグ日付ジャンプ">
@@ -1540,19 +1569,169 @@ const cgCatalog=[
   ["epilogue-secret-exchange","ALL TRUE　秘密の交換"]
 ];
 const characterProfiles=[
-  {id:"rowan",name:"ロウ",subtitle:"タヌキ獣人／大学生・ゲームプランナー志望",text:"一人称：僕　愛称：ロウ\n\n自信なさげで姿勢が悪く、考え込むとスマートフォンへ顔を近づける。個人ゲーム開発のスランプと、就職か創作かという進路に悩んでいる。\n\n慎重さは弱点であると同時に、他人の言葉を簡単に捨てない強みでもある。十二夜を通して「正しい選択」より、自分で選んだ次の一歩を大切にするようになる。"},
-  {id:"mara",name:"マーラ",subtitle:"サキュバス／深夜ラジオのパーソナリティ",text:"既婚者で、心に決めた恋人と暮らしている。他人から精気を吸うことはなく、言葉と距離感で場を温める。\n\nコミュニケーション能力が高く、初対面同士の会話へ自然に橋を架ける人。恋愛だけでなく、仕事や孤独の相談にも耳を傾ける。\n\n華やかで軽やかに見えるが、幸福を維持するには日々の小さな選択が必要だと知っている。"},
-  {id:"june",name:"ジューン",subtitle:"セントバーナード獣人／夜間運転手",text:"大柄で穏やかな地元民。夜の道路と天候に詳しく、人や荷物を安全に送り届ける。\n\n急がせず、結論を奪わず、必要なときだけ道を示す。ロウたちにとっては、立ち止まることも移動の一部だと教える存在。\n\n車内には紙の地図を残している。迷った場所と、休めた場所を忘れないため。"},
-  {id:"reiji",name:"牙王 レイジ",subtitle:"虎獣人／トッププロレスラー “サー・ヴァーミリオン”",text:"32歳、身長210cm、体重190kg。黒い毛並みにヴァーミリオンの縞を染めた、圧倒的な超重量級レスラー。\n\n余裕と支配力に満ち、守ると決めた相手を自分の管理下へ置きたがる。面倒を見る意志は本物だが、自身の怪我だけは隠して無理をする。\n\n半年に一度、実家へ戻る二週間だけ店の常連になる。勝つために作った王の姿と、休息を必要とする本人との間で揺れている。"},
-  {id:"kai",name:"カイ／リレー",subtitle:"チーター獣人／元・機関エージェント",text:"20代前半。生体電気を増幅し、接触した相手を制圧する能力者。高速接近して脅威と護衛対象の間へ入り続ける。\n\nかつての護衛対象が安全になり、自分を必要としなくなったことで長期休暇へ入った。明るく人懐っこい一方、「間に合わない」状況を極端に恐れる。\n\n自身の負傷には無頓着。任務を失った旅の中で、必要とされなくても自分の行き先を選べるのか確かめている。"},
-  {id:"teo",name:"テオ",subtitle:"地球外文化調査員",text:"性別を外見から判別しにくい、宇宙服姿の来訪者。前面ガラスへ表情や星空のような光が表示される。\n\n地球文化への理解が浅く、飲み物、冗談、接客などを真面目に誤解する。緊張した物語に一息入れながら、常識を外側から問い直す役目を持つ。\n\n地球の『普通』を調査していたはずが、最後には例外だらけの店を最も興味深い観測地点として記録する。"},
-  {id:"elsie",name:"エルシー",subtitle:"幽霊／モロウ・クリークの世話焼き",text:"芝居がかった華やかな振る舞いと、遠慮なく本質へ切り込む言葉が特徴。町の事情にも人の噂にも詳しい。\n\n悩む相手へ優しい嘘を渡すより、本人が避けている願いを指摘する。その鋭さの根には、誰も一人で沈ませたくないという世話焼きな愛情がある。\n\n新しい客が店へ馴染むまで会話を回し、馴染んだあとは誰より楽しそうに騒ぐ。"},
-  {id:"lector",name:"レクター",subtitle:"狼獣人・ヴァンパイア／人気声優",text:"2メートルを超える大柄な男性。紳士的、知的、理屈っぽく、古典劇のような言葉遣いを好む。\n\n長い寿命に飽きないよう仕事を転々とし、近年は人気声優として活動していた。普通の食事も摂るが、人工血液パックを人目から隠して飲むことがある。\n\n役を演じ続けることにも飽きを感じ、次の生き方を探している。『ごきげんよう、親愛なる友よ』が馴染みの挨拶。"}
+  {id:"rowan",name:"ロウ",subtitle:"タヌキ獣人／大学生・ゲームプランナー志望",text:`種族：タヌキ獣人
+性別：男
+年齢：20〜21歳前後
+一人称：僕
+二人称：あなた、〜さん
+愛称：ロウ
+
+姿勢が悪く、自信なさげで、考え込むとスマートフォンへ顔を寄せる癖がある。アジア系の雰囲気を持つ青年で、静かな場所ではかえって緊張しやすい。
+
+性格は慎重で内向的。思いつきを勢いで口にするより、頭の中で何度も組み立ててから言葉にしたいタイプ。その反面、他人の意見を簡単に捨てられず、自分の企画を削っては迷い、削ってはまた迷う。
+
+口調は控えめで柔らかい。否定から入るより、まず受け取ってから困る。褒められると照れ、強く背中を押されると一瞬固まる。
+
+職業・立場は大学生。ゲームプランナー志望で、個人制作のゲームを作り続けているが、最近はスランプ気味。就職するのか、個人制作を続けるのか、その両立が可能なのかで揺れている。
+
+過去には、世界観や設定を積み上げること自体が創作の喜びだった。けれど現在は、「形にして人へ渡すこと」への恐れが大きくなり、完成直前で足が止まりやすい。
+
+未来では、正解探しよりも自分で選んだ次の一歩を大切にするようになる。未完成のまま始める勇気を覚え、就職と創作のどちらかではなく、自分に合った続け方を見つけていく。`},
+  {id:"mara",name:"マーラ",subtitle:"サキュバス／深夜ラジオのパーソナリティ",text:`種族：サキュバス
+性別：女
+年齢：外見は20代後半、人間換算では30歳前後
+一人称：私
+二人称：あなた、名前呼び
+
+華やかで柔らかな空気をまとった女性。深夜ラジオの人気パーソナリティで、場の温度を読むのが非常に上手い。艶っぽさはあるが、相手を食べるような危うさではなく、「安心して話せる魅力」へ変わっている。
+
+性格は明るく大人で、面倒見がよい。初対面同士の会話へ自然に橋を架ける一方、甘やかすだけではなく、必要なところでは相手の本音へ静かに触れる。
+
+口調は親しみやすく、からりとしている。相手を立てながらも、恋愛も仕事も「本人がどうしたいのか」を見失わせない。笑って流すように見えて、見ているところはかなり鋭い。
+
+職業は深夜ラジオのパーソナリティ。恋愛相談のイメージが強いが、実際には孤独、仕事、人間関係の悩みまで拾い上げる聞き手であり話し手でもある。
+
+現在は心に決めた恋人と結婚しており、他人から精気を吸うことはない。かつて種族的な役割として求められていた“誘惑”を、今は言葉と距離感で人を温める力へ変えている。
+
+未来では、幸福は完成品ではなく日々調合するものだという自身の実感を、放送でも私生活でも少しずつ言葉にしていく。夜更けに人を救うやり方を、もう十分に自分のものにしている。`},
+  {id:"june",name:"ジューン",subtitle:"セントバーナード獣人／夜間運転手",text:`種族：セントバーナード獣人
+性別：男
+年齢：30代前半
+一人称：俺
+二人称：お前、名前呼び
+
+大柄で穏やかな地元民。夜間の道路事情や天候、山道の癖に詳しく、人も荷物も安全に運ぶことを何より大切にしている。分厚い体格に反して、圧を出すより安心感を先に与えるタイプ。
+
+性格は落ち着いていて、急がせない。人の結論を奪わず、必要なときだけ進む道を示す。押しつけがましさがなく、「そこにいると話しやすい人」の典型みたいな男。
+
+口調は低めで穏やか。言葉数は多くないが、短い一言がちょうど欲しいところへ入る。相手を焦らせるような言い回しをほとんどしない。
+
+職業は夜間運転手。送り迎え、運搬、ちょっとした代行まで請ける、町では顔の広い働き方をしている。人と町のあいだを繋ぐ存在であり、深夜の生活圏を支える一人。
+
+過去には、自分も進路や居場所に迷った時期があったらしいが、今はそれを前面には出さない。ただ、立ち止まることも移動の一部だと自然に知っている。
+
+未来でも派手に人生を変えることはない。けれど、ロウたちのような若い客が迷いながら前へ進む姿を静かに見守り、必要な夜にはまたハンドルを握る。車内の紙の地図は、休めた場所を忘れないための記録であり続ける。`},
+  {id:"reiji",name:"牙王 レイジ",subtitle:"虎獣人／トッププロレスラー “サー・ヴァーミリオン”",text:`種族：虎獣人
+性別：男
+年齢：32歳
+身長：210cm
+体重：190kg
+一人称：オレ
+二人称：お前
+
+黒ベースの毛並みにヴァーミリオンの縞を染めた、圧倒的な超重量級レスラー。リング外では高級ダークスーツとロングコートを纏い、マフィアのボスのような風格を持つ。近づくだけで場の重心を奪う男。
+
+性格は余裕と自信に満ち、支配的。守ると決めた相手を自分の管理下へ置きたがるが、その面倒見は本物で、口先だけでは終わらない。独占欲と執着は強いが、それを悪意より責任として抱え込む。
+
+口調は低く落ち着き、命令と提案が自然に混ざる。「逃げるな」「見せろ」「座れ」といった短い言葉でも、相手の行動を止めるだけの圧がある。褒める時ですら支配の気配が消えない。
+
+職業は現役トッププロレスラー。リングネームは“サー・ヴァーミリオン”。圧倒的パワーと重量で制圧するファイトスタイルを持ち、人気と実力を兼ね備えた絶対王者として君臨している。
+
+過去には荒れていた時期があり、勝つために“王”のキャラクターを作り上げた。毛色を染めたのも、名前を飾ったのも、すべては見られる形へ自分を鍛え直すためだった。
+
+現在は王者としての姿と、休息や治療を必要とする生身の自分とのあいだで揺れている。怪我を隠して無理をしがちなのが最大の弱点。
+
+未来では、勝つことをやめるのではなく、勝ち続けるために休む判断を覚えていく。守るべき居場所の中へ、ようやく自分自身も含められるようになる。`},
+  {id:"kai",name:"カイ／リレー",subtitle:"チーター獣人／元・機関エージェント",text:`種族：チーター獣人
+性別：男
+年齢：20代前半
+身長：180cm前後
+体重：85kg前後
+一人称：俺
+二人称：あんた、名前呼び
+
+黄金色の短毛と黒い斑点を持つ、しなやかなアスリート体型の青年。距離が近く、立っているだけで「いつでも動ける」緊張感がある。感情は耳と尻尾に出やすいが、集中すると逆にぴたりと止まる。
+
+性格は明るく人懐っこい現場型。軽口を叩きながら相手の懐へ入るのが上手いが、その根には強い警戒心と、「間に合わなかったらどうしよう」という恐れがある。
+
+口調はフランクで軽快。「〜だろ」「〜じゃん」「〜しとけ」など、距離の近い話し方をする。危険時だけ言葉が短く、鋭くなる。
+
+職業・経歴は、異能を扱う秘密の“機関”に所属していた元エージェント。機動制圧と護衛任務に長け、自身も生体電気を増幅して接触相手を制圧する能力者。高速接近して脅威と対象のあいだへ入り続ける戦い方を得意とする。
+
+少し前までは危険な能力者の専属護衛だったが、その護衛対象が安全になり、自分を必要としなくなったことで長期休暇へ入った。明るさの裏では、自分が必要とされない時間の扱い方をまだ知らない。
+
+未来では、誰かに命じられなくても、自分で行き先を選べるようになるはずだ。守る対象がいない夜にも、自分の足で立ち続けられるかを、旅の中で確かめている。`},
+  {id:"teo",name:"テオ",subtitle:"地球外文化調査員",text:`種族：地球外知性体
+性別：外見からは判別しにくい
+年齢：不明
+一人称：私
+二人称：あなた、対象名
+
+宇宙服姿で現れる文化調査員。前面ガラスへ表情や星空のような光が映り、見た目から性別や年齢を判断しにくい。人間や獣人にとっての“普通”を、そのまま信じていない存在。
+
+性格は真面目で好奇心旺盛。地球文化に対して失礼なつもりはまったくないのに、前提知識のズレで妙なところを踏み抜く。緊張した空気を壊す役だが、本人はいつだって本気で調査している。
+
+口調は丁寧でやや硬め。観測対象として質問する癖があり、情緒的な場面でも論理的に確認しようとして周囲を困らせることがある。
+
+職業は地球外文化調査員。飲料文化、接客、冗談、社交、夜の居場所など、人類圏では当たり前になっている習慣を資料として集めている。
+
+過去には、地球を平均的な文化サンプルとして調査するつもりだった。しかし (s)mokeMoke のような例外だらけの店に出会ったことで、「普通」とは何かを逆に問い返されることになる。
+
+未来では、地球文化の中でも“整った正解”ではなく、居心地の悪さや曖昧さを抱えたまま共存する夜に強く興味を示す。観測報告書の末尾には、きっとこの店の名前が何度も出てくる。`},
+  {id:"elsie",name:"エルシー",subtitle:"幽霊／モロウ・クリークの世話焼き",text:`種族：幽霊
+性別：男性寄り
+年齢：外見不詳
+一人称：アタシ
+二人称：あんた、名前呼び
+
+いわゆる“オカマキャラ”としての華やかさと、町の噂を全部知っていそうな情報量を持つ存在。芝居がかった仕草、遠慮のない物言い、場を回す異様なうまさが目立つ。
+
+性格は世話焼きで鋭い。優しい嘘で撫でるより、本人が避けている願いをズバリ言い当てる方を選ぶ。だがその鋭さは突き放しではなく、「一人で沈ませたくない」という愛情から来ている。
+
+口調は派手で演劇的。冗談めかして笑わせながら、次の瞬間には本質だけを突く。相手が気まずがることほど、あえて明るく言って逃げ道を作るタイプ。
+
+職業らしい職業は持たないが、地元では“夜の案内人”のような立ち位置にいる。新しい客が店へ馴染むまで会話を回し、馴染んだあとは誰よりも楽しそうに騒ぐ。
+
+過去について多くを語らないが、長く町を見てきた者の視線を持っている。生者の未練や見栄を見慣れているからこそ、取り繕いにあまり価値を置かない。
+
+未来でも立場は大きく変わらないだろう。けれど、誰かがこの町で自分の居場所を見つけるたび、彼は少しだけ満足そうに笑う。賑やかで、容赦がなくて、妙に頼れる夜の常連であり続ける。`},
+  {id:"lector",name:"レクター",subtitle:"狼獣人・ヴァンパイア／人気声優",text:`種族：狼獣人・ヴァンパイア
+性別：男
+年齢：数百年単位
+身長：2m超
+体格：レイジと並ぶほど大柄
+一人称：私
+二人称：君、汝、親愛なる友よ
+
+長身の狼獣人であり、ヴァンパイアとしての長い時間を生きてきた男。大柄な体躯に似合う低くよく通る声を持ち、立っているだけで舞台の照明が当たったような存在感がある。
+
+性格は紳士的、知的、そして理屈っぽい。物腰は優雅で礼儀正しいが、どこか芝居めいており、他人との会話すら一幕の応酬として楽しんでいる節がある。
+
+口調は古典劇のように整っていて、「ごきげんよう、親愛なる友よ」「神の加護が、汝と共にありますように」など、現代では少し浮くほど格式張った表現を好む。からかい方も上品だが、刺さるところにはきっちり刺さる。
+
+職業は近年まで人気声優。長命ゆえに生きることへ飽きないよう様々な仕事を転々としてきたが、役を演じ続けることにもまた飽きが差し始めている。普通の食事も摂るが、人工血液パックを人目から隠して飲むことがある。
+
+過去には数え切れない仮面を被ってきた。役者、案内人、貴族めいた保護者、夜の観察者。長寿ゆえに、どの顔も本物であり、どの顔も仮面でもある。
+
+現在は「次の生き方」を探している段階。人気声優という成功の最中にいながら、そのまま惰性で続けることを良しとしない。飽きは衰えではなく、変化の前兆だと考えている。
+
+未来では表舞台から一歩退き、若い声や若い才能へ関わる立場に惹かれていくかもしれない。夜の店では相変わらず一礼し、芝居めいた挨拶を残すだろうが、その視線は以前より少しだけ他人の未来へ向いている。`}
 ];
+const characterProfileArt={
+  rowan:"assets/expressions/rowan-special.png",
+  mara:"assets/expressions/mara-special.png",
+  june:"assets/june-master.png",
+  reiji:"assets/expressions/reiji-special.png",
+  kai:"assets/expressions/kai-special.png",
+  teo:"assets/expressions/teo-special.png",
+  elsie:"assets/expressions/elsie-special.png",
+  lector:"assets/nessa-master.png"
+};
 let endingUnlocked=localStorage.getItem("smokemokeEndingUnlocked")==="true";
 let cgViewIndex=-1;
 let conversationLog=[],lastLoggedStep=-1;
 let currentOrder=null,selectedBase=null,selectedAcc=[],craftKey=null;
+let typewriterTimer=null,typewriterIndex=0,typewriterActive=false,currentLineText="",currentLineSpeaker="",currentLineVoiceProfile=null,lastTypeSeAt=0;
 const $=id=>document.getElementById(id);
 const savedAudioSettings=(()=>{
   try{return JSON.parse(localStorage.getItem("smokemokeAudioSettings")||"{}")}catch{return {}}
@@ -1560,19 +1739,127 @@ const savedAudioSettings=(()=>{
 let audioCtx=null,masterGain=null,
   seEnabled=savedAudioSettings.seEnabled??true,bgmEnabled=savedAudioSettings.bgmEnabled??true,
   seVolume=Number.isFinite(savedAudioSettings.seVolume)?savedAudioSettings.seVolume:.75,
-  bgmVolume=Number.isFinite(savedAudioSettings.bgmVolume)?savedAudioSettings.bgmVolume:.55;
+  bgmVolume=Number.isFinite(savedAudioSettings.bgmVolume)?savedAudioSettings.bgmVolume:.55,
+  textSpeed=Number.isFinite(savedAudioSettings.textSpeed)?savedAudioSettings.textSpeed:4;
 function saveAudioSettings(){
-  localStorage.setItem("smokemokeAudioSettings",JSON.stringify({bgmEnabled,seEnabled,bgmVolume,seVolume}));
+  localStorage.setItem("smokemokeAudioSettings",JSON.stringify({bgmEnabled,seEnabled,bgmVolume,seVolume,textSpeed}));
 }
 const seFiles={
   advance:"ui_advance_01.mp3",select:"ui_select.mp3",cancel:"ui_cancel.mp3",error:"ui_error.mp3",open:"ui_open.mp3",
   bell:"door_bell.mp3",doorOpen:"door_open.mp3",doorClose:"door_close.mp3",chair:"chair.mp3",
-  jar:"jar_pick.mp3",cup1:"cup_place_01.mp3",cup2:"cup_place_02.mp3"
+  jar:"jar_pick.mp3",cup1:"cup_place_01.mp3",cup2:"cup_place_02.mp3",text:"message_text_01.mp3"
 };
 const sePool=Object.fromEntries(Object.entries(seFiles).map(([key,file])=>[key,new Audio(`assets/SE/${file}`)]));
-function playSE(key,volume=.55){
+const typewriterVoices={
+  "ロウ":{rate:1.14,variation:.035,volume:1,delayMult:1.08,seIntervalMult:1.02},
+  "マーラ":{rate:1.06,variation:.03,volume:1,delayMult:.96,seIntervalMult:.95},
+  "ジューン":{rate:.96,variation:.025,volume:1.02,delayMult:1.02,seIntervalMult:1},
+  "レイジ":{rate:.82,variation:.02,volume:1.08,delayMult:1.26,seIntervalMult:1.18},
+  "カイ":{rate:1.2,variation:.04,volume:1,delayMult:.8,seIntervalMult:.78},
+  "テオ":{rate:1.3,variation:.05,volume:.96,delayMult:.9,seIntervalMult:.72},
+  "エルシー":{rate:1.24,variation:.045,volume:1.04,delayMult:.84,seIntervalMult:.74},
+  "レクター":{rate:.76,variation:.02,volume:1.08,delayMult:1.34,seIntervalMult:1.22},
+  "店主":{rate:.92,variation:.025,volume:.98,delayMult:1.14,seIntervalMult:1.08}
+};
+function playSE(key,volume=.55,options={}){
   if(!seEnabled||!sePool[key])return;
-  const sound=sePool[key].cloneNode();sound.volume=Math.min(1,volume*seVolume);sound.play().catch(()=>{});
+  const sound=sePool[key].cloneNode();
+  if(options.rate&&Number.isFinite(options.rate)){
+    sound.playbackRate=options.rate;
+    if("preservesPitch" in sound)sound.preservesPitch=false;
+    if("mozPreservesPitch" in sound)sound.mozPreservesPitch=false;
+    if("webkitPreservesPitch" in sound)sound.webkitPreservesPitch=false;
+  }
+  sound.volume=Math.min(1,volume*seVolume*(options.volumeMultiplier??1));
+  sound.play().catch(()=>{});
+}
+function clearTypewriterTimer(){
+  clearTimeout(typewriterTimer);typewriterTimer=null;
+}
+function updateAdvanceIndicator(){
+  $("advance").classList.toggle("typing",typewriterActive);
+}
+function typeSpeedLabel(value){
+  return Number(value)>=6?"MAX":String(value);
+}
+function baseTypeDelayMs(){
+  return [54,40,28,18,10,0][Math.max(0,Math.min(5,Number(textSpeed)-1))];
+}
+function typeDelayMs(){
+  const base=baseTypeDelayMs();
+  if(base<=0)return 0;
+  return Math.max(6,Math.round(base*(currentLineVoiceProfile?.delayMult??1)));
+}
+function baseTypeSeIntervalMs(){
+  return [34,28,22,18,14,0][Math.max(0,Math.min(5,Number(textSpeed)-1))];
+}
+function typeSeIntervalMs(){
+  const base=baseTypeSeIntervalMs();
+  if(base<=0)return 0;
+  return Math.max(8,Math.round(base*(currentLineVoiceProfile?.seIntervalMult??1)));
+}
+function buildCurrentTypewriterVoiceProfile(){
+  if(!currentLineSpeaker)return null;
+  const voice=typewriterVoices[currentLineSpeaker];
+  if(!voice)return {rate:1,variation:.02,volume:1,delayMult:1,seIntervalMult:1};
+  const offset=(Math.random()*2-1)*(voice.variation||0);
+  return {
+    rate:Math.max(.65,Math.min(1.45,voice.rate+offset)),
+    volume:voice.volume??1,
+    delayMult:voice.delayMult??1,
+    seIntervalMult:voice.seIntervalMult??1
+  };
+}
+function maybePlayTypeSE(char){
+  if(!char||/\s/.test(char)||/[、。.,!?！？…]/.test(char))return;
+  const now=performance.now();
+  if(typeSeIntervalMs()>0&&now-lastTypeSeAt<typeSeIntervalMs())return;
+  lastTypeSeAt=now;
+  const voice=currentLineVoiceProfile;
+  if(!voice)return;
+  playSE("text",.32,{rate:voice.rate,volumeMultiplier:voice.volume});
+}
+function finishLineDisplay(){
+  typewriterActive=false;
+  typewriterIndex=currentLineText.length;
+  $("text").textContent=currentLineText;
+  updateAdvanceIndicator();
+  queueSkip();
+}
+function revealCurrentLineImmediately(){
+  clearTypewriterTimer();
+  finishLineDisplay();
+}
+function stepTypewriter(){
+  if(!typewriterActive)return;
+  typewriterIndex++;
+  const nextChar=currentLineText[typewriterIndex-1]||"";
+  $("text").textContent=currentLineText.slice(0,typewriterIndex);
+  maybePlayTypeSE(nextChar);
+  if(typewriterIndex>=currentLineText.length){
+    finishLineDisplay();
+    return;
+  }
+  typewriterTimer=setTimeout(stepTypewriter,typeDelayMs());
+}
+function showDialogueText(text){
+  currentLineText=text||"";
+  currentLineSpeaker=$("speaker").textContent||"";
+  currentLineVoiceProfile=buildCurrentTypewriterVoiceProfile();
+  clearTypewriterTimer();
+  lastTypeSeAt=0;
+  if(!currentLineText.length||typeDelayMs()<=0){
+    $("text").textContent=currentLineText;
+    typewriterActive=false;
+    updateAdvanceIndicator();
+    queueSkip();
+    return;
+  }
+  $("text").textContent="";
+  typewriterIndex=0;
+  typewriterActive=true;
+  updateAdvanceIndicator();
+  stepTypewriter();
 }
 function initAudio(){
   if(audioCtx)return;
@@ -1851,7 +2138,8 @@ function openCharacterProfile(id){
   const profile=characterProfiles.find(item=>item.id===id);if(!profile)return;
   cgViewIndex=-1;$("cgStageImage").classList.remove("show");$("cgStageEmpty").style.display="none";$("cgEnlarge").classList.remove("show");
   $("cgStageTitle").textContent=`CHARACTER ARCHIVE　${profile.name}`;
-  $("cgProfile").innerHTML=`<img src="assets/expressions/${profile.id}-special.png" alt="${profile.name}">
+  const artSrc=characterProfileArt[profile.id]||`assets/expressions/${profile.id}-special.png`;
+  $("cgProfile").innerHTML=`<div class="cg-profile-art-wrap"><img class="cg-profile-art ${profile.id}" src="${artSrc}" alt="${profile.name}"></div>
     <div class="cg-profile-copy"><small>${profile.subtitle}</small><h2>${profile.name}</h2><p>${profile.text}</p></div>`;
   $("cgProfile").classList.add("show");
 }
@@ -1892,7 +2180,7 @@ function stopSkip(){
 }
 function queueSkip(){
   clearTimeout(skipTimer);skipTimer=null;
-  if(!skipMode)return;
+  if(!skipMode||typewriterActive)return;
   if(!currentLineWasRead){stopSkip();return}
   skipTimer=setTimeout(()=>advanceStory(),85);
 }
@@ -1930,6 +2218,7 @@ function openLoadWindow(){
   $("loadOverlay").classList.add("show");
 }
 function resetSceneState(){
+  clearTypewriterTimer();typewriterActive=false;typewriterIndex=0;currentLineText="";updateAdvanceIndicator();
   sceneToken++;entranceBusy=false;visible=[];actors([],"");clearStill();toggleUI(false);stopSkip();
   endingObserver?.disconnect();endingUserPaused=false;
   $("mix").classList.remove("show");$("book").classList.remove("show");$("logOverlay").classList.remove("show");
@@ -2072,16 +2361,16 @@ function render(){
   const readKey=`${node.n||""}\u241f${line||""}`;
   currentLineWasRead=!!readHistory[readKey];
   readHistory[readKey]=true;localStorage.setItem("smokemokeReadHistory",JSON.stringify(readHistory));
-  $("text").textContent=line;updateExpressions(node.n||"",line||"",node);
+  showDialogueText(line);updateExpressions(node.n||"",line||"",node);
   addLogEntry({speaker:node.n||"",text:line||""});
   placeBubble(node.n||"");
-  queueSkip();
 }
 $("dayStartButton").onclick=()=>{
   playSE("cup1",.5);$("dayTransition").classList.remove("show");step++;render();
 };
 function advanceStory(){
   if(!gameStarted||entranceBusy||$("mix").classList.contains("show")||$("book").classList.contains("show")||$("logOverlay").classList.contains("show")||$("optionsOverlay").classList.contains("show")||$("loadOverlay").classList.contains("show")||$("end").classList.contains("show")||$("dayTransition").classList.contains("show"))return;
+  if(typewriterActive){revealCurrentLineImmediately();return;}
   if(seEnabled)initAudio();
   ensureMusicStarted();
   playSE("advance",.34);
@@ -2245,6 +2534,7 @@ function updateAudioOptions(){
   const bgm=Math.round(bgmVolume*100),se=Math.round(seVolume*100);
   $("optionBgmVolume").value=bgm;$("optionBgmValue").textContent=bgm;$("musicVolume").value=bgm;
   $("optionSeVolume").value=se;$("optionSeValue").textContent=se;
+  $("optionTextSpeed").value=textSpeed;$("optionTextSpeedValue").textContent=typeSpeedLabel(textSpeed);
   music.volume=bgmVolume;
 }
 $("optionBgmMute").onclick=()=>{
@@ -2257,6 +2547,11 @@ $("optionBgmVolume").oninput=event=>{
   bgmVolume=event.target.value/100;music.volume=bgmVolume;$("musicVolume").value=event.target.value;$("optionBgmValue").textContent=event.target.value;saveAudioSettings();
 };
 $("optionSeVolume").oninput=event=>{seVolume=event.target.value/100;$("optionSeValue").textContent=event.target.value;saveAudioSettings()};
+$("optionTextSpeed").oninput=event=>{
+  textSpeed=Number(event.target.value);
+  $("optionTextSpeedValue").textContent=typeSpeedLabel(textSpeed);
+  saveAudioSettings();
+};
 ["book","logOverlay","optionsOverlay","loadOverlay"].forEach(id=>$(id).addEventListener("click",event=>{
   if(event.target===$(id)){playSE("cancel",.3);$(id).classList.remove("show")}
 }));
