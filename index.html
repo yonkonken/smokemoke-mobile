@@ -1773,7 +1773,7 @@ const typewriterVoices={
   "店主":{rate:.92,variation:.025,volume:.98,delayMult:1.14,seIntervalMult:1.08}
 };
 function playSE(key,volume=.55,options={}){
-  if(!seEnabled||!sePool[key])return;
+  if(document.hidden||!seEnabled||!sePool[key])return;
   const sound=sePool[key].cloneNode();
   if(options.rate&&Number.isFinite(options.rate)){
     sound.playbackRate=options.rate;
@@ -1785,7 +1785,7 @@ function playSE(key,volume=.55,options={}){
   sound.play().catch(()=>{});
 }
 function playTypewriterSE(volume=.32,options={}){
-  if(!seEnabled||!typeSeVoices.length)return;
+  if(document.hidden||!seEnabled||isMobilePerfMode()||!typeSeVoices.length)return;
   const sound=typeSeVoices[typeSeVoiceIndex++%typeSeVoices.length];
   try{
     sound.pause();
@@ -1840,6 +1840,7 @@ function buildCurrentTypewriterVoiceProfile(){
   };
 }
 function maybePlayTypeSE(char){
+  if(isMobilePerfMode())return;
   if(!char||/\s/.test(char)||/[、。.,!?！？…]/.test(char))return;
   const now=performance.now();
   if(typeSeIntervalMs()>0&&now-lastTypeSeAt<typeSeIntervalMs())return;
@@ -1931,6 +1932,7 @@ const soundtrack=[
 ];
 const music=$("musicAudio");
 let musicIndex=-1,musicStarted=false,musicHistory=[];
+let resumeMusicAfterVisible=false;
 let musicFavorites=new Set(JSON.parse(localStorage.getItem("smokemokeMusicFavorites")||"[]"));
 let favoriteRepeat=localStorage.getItem("smokemokeFavoriteRepeat")==="true";
 const playIcon='<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>';
@@ -1958,12 +1960,27 @@ function loadMusic(index,autoplay=true,remember=true){
   if(index==null||index<0)return;
   if(remember&&musicIndex>=0)musicHistory.push(musicIndex);
   musicIndex=index;music.src=`assets/BGM/${soundtrack[index].file}`;updateMusicUI();
-  if(autoplay&&bgmEnabled)music.play().then(()=>{musicStarted=true;updateMusicUI()}).catch(()=>updateMusicUI());
+  if(autoplay&&bgmEnabled&&!document.hidden)music.play().then(()=>{musicStarted=true;updateMusicUI()}).catch(()=>updateMusicUI());
 }
 function ensureMusicStarted(){
-  if(!bgmEnabled||musicStarted)return;
+  if(document.hidden||!bgmEnabled||musicStarted)return;
   if(musicIndex<0)loadMusic(randomTrack(),false,false);
   music.play().then(()=>{musicStarted=true;updateMusicUI()}).catch(()=>updateMusicUI());
+}
+function handleVisibilityAudio(){
+  if(document.hidden){
+    resumeMusicAfterVisible=bgmEnabled&&!music.paused;
+    if(!music.paused)music.pause();
+    return;
+  }
+  if(resumeMusicAfterVisible&&bgmEnabled){
+    resumeMusicAfterVisible=false;
+    if(musicIndex<0)loadMusic(randomTrack(),false,false);
+    music.play().then(()=>{musicStarted=true;updateMusicUI()}).catch(()=>updateMusicUI());
+  }else{
+    resumeMusicAfterVisible=false;
+    updateMusicUI();
+  }
 }
 function reshuffleMusicForDay(){
   if(!musicStarted||musicIndex<0)return;
@@ -1987,6 +2004,7 @@ music.addEventListener("timeupdate",()=>{
   $("musicSeek").value=music.duration?Math.round(music.currentTime/music.duration*1000):0;
 });
 music.addEventListener("ended",()=>loadMusic(randomTrack()));
+document.addEventListener("visibilitychange",handleVisibilityAudio);
 $("soundtrackBtn").onclick=()=>{
   const opening=!$("musicPlayer").classList.contains("show");
   closeUtilityWindows(opening?"music":"");playSE(opening?"open":"cancel",.42);
@@ -2571,7 +2589,7 @@ function updateAudioOptions(){
 }
 $("optionBgmMute").onclick=()=>{
   bgmEnabled=!bgmEnabled;
-  if(!bgmEnabled)music.pause();else if(musicIndex<0)ensureMusicStarted();else music.play().catch(()=>{});
+  if(!bgmEnabled)music.pause();else if(document.hidden)resumeMusicAfterVisible=false;else if(musicIndex<0)ensureMusicStarted();else music.play().catch(()=>{});
   updateAudioOptions();saveAudioSettings();
 };
 $("optionSeMute").onclick=()=>{seEnabled=!seEnabled;updateAudioOptions();saveAudioSettings();if(seEnabled)playSE("select",.3)};
