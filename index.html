@@ -274,8 +274,8 @@
     .option-row button{padding:8px;border:1px solid #8d7a63;background:#292534;color:#f1ddbd;cursor:pointer}
     .option-row button.muted{color:#9e9296;border-color:#625964;background:#191720}
     .option-row input{width:100%;accent-color:#d88b79;touch-action:none}
-    .volume-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
-    .volume-steps button{min-width:0;padding:9px 2px;font-size:11px;color:#aaa0a7;border-color:#504958;background:#171620}
+    .volume-steps{display:grid;grid-template-columns:repeat(11,1fr);gap:2px}
+    .volume-steps button{min-width:0;padding:9px 1px;font-size:9px;color:#aaa0a7;border-color:#504958;background:#171620}
     .volume-steps button.active{color:#fff0d0;border-color:#d49a70;background:#5b3542;box-shadow:inset 0 0 0 1px #e0ad7a55}
     #cast.final-cast{inset:4% 4% 10%;gap:0;justify-content:center;overflow:visible}
     #cast.final-cast .actor{flex:0 0 31%;width:31%;height:94%;z-index:1}
@@ -655,8 +655,8 @@
   </div></section>
   <section id="optionsOverlay" class="overlay"><div class="modal"><button class="close" id="optionsClose">閉じる</button>
     <h2>オプション</h2>
-    <div class="option-row"><strong>BGM</strong><button id="optionBgmMute">ON</button><div id="optionBgmSteps" class="volume-steps" aria-label="BGM音量"><button data-volume="0">0</button><button data-volume="25">25</button><button data-volume="50">50</button><button data-volume="75">75</button><button data-volume="100">100</button></div><span id="optionBgmValue">55</span></div>
-    <div class="option-row"><strong>SE</strong><button id="optionSeMute">ON</button><div id="optionSeSteps" class="volume-steps" aria-label="SE音量"><button data-volume="0">0</button><button data-volume="25">25</button><button data-volume="50">50</button><button data-volume="75">75</button><button data-volume="100">100</button></div><span id="optionSeValue">75</span></div>
+    <div class="option-row"><strong>BGM</strong><button id="optionBgmMute">ON</button><div id="optionBgmSteps" class="volume-steps" aria-label="BGM音量"><button data-volume="0">0</button><button data-volume="10">10</button><button data-volume="20">20</button><button data-volume="30">30</button><button data-volume="40">40</button><button data-volume="50">50</button><button data-volume="60">60</button><button data-volume="70">70</button><button data-volume="80">80</button><button data-volume="90">90</button><button data-volume="100">100</button></div><span id="optionBgmValue">30</span></div>
+    <div class="option-row"><strong>SE</strong><button id="optionSeMute">ON</button><div id="optionSeSteps" class="volume-steps" aria-label="SE音量"><button data-volume="0">0</button><button data-volume="10">10</button><button data-volume="20">20</button><button data-volume="30">30</button><button data-volume="40">40</button><button data-volume="50">50</button><button data-volume="60">60</button><button data-volume="70">70</button><button data-volume="80">80</button><button data-volume="90">90</button><button data-volume="100">100</button></div><span id="optionSeValue">40</span></div>
     <div class="option-row"><strong>TEXT</strong><input id="optionTextSpeed" type="range" min="1" max="6" value="4"><span id="optionTextSpeedValue">4</span></div>
     <div class="option-actions"><button id="optionLoadBtn">ロードする</button><button id="optionTitleBtn">タイトル画面に戻る</button></div>
   </div></section>
@@ -1734,8 +1734,8 @@ let audioCtx=null,masterGain=null,bgmGain=null,seGain=null,musicSource=null,webA
 const seBuffers=new Map();
 let
   seEnabled=savedAudioSettings.seEnabled??true,bgmEnabled=savedAudioSettings.bgmEnabled??true,
-  seVolume=Number.isFinite(savedAudioSettings.seVolume)?savedAudioSettings.seVolume:.75,
-  bgmVolume=Number.isFinite(savedAudioSettings.bgmVolume)?savedAudioSettings.bgmVolume:.55,
+  seVolume=Number.isFinite(savedAudioSettings.seVolume)?savedAudioSettings.seVolume:.4,
+  bgmVolume=Number.isFinite(savedAudioSettings.bgmVolume)?savedAudioSettings.bgmVolume:.3,
   textSpeed=Number.isFinite(savedAudioSettings.textSpeed)?savedAudioSettings.textSpeed:4;
 function saveAudioSettings(){
   localStorage.setItem("smokemokeAudioSettings",JSON.stringify({bgmEnabled,seEnabled,bgmVolume,seVolume,textSpeed}));
