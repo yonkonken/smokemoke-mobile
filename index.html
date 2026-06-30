@@ -291,6 +291,9 @@
     #stillLayer.show{opacity:1}
     #stillImage{width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated}
     #stillLayer:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 55px #05070d88;pointer-events:none}
+    #timeFade{position:absolute;z-index:24;inset:0;background:#020309;opacity:0;visibility:hidden;pointer-events:none;
+      transition:opacity .65s ease,visibility 0s linear .65s}
+    #timeFade.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .65s ease}
     #game.ui-hidden #dialogueBubble,#game.ui-hidden #utilityBar,#game.ui-hidden #bottomTools,#game.ui-hidden #soundtrackBtn,#game.ui-hidden #musicPlayer,
     #game.ui-hidden #book,#game.ui-hidden #logOverlay,#game.ui-hidden #optionsOverlay,#game.ui-hidden #loadOverlay,
     #game.ui-hidden #toast{opacity:0!important;pointer-events:none!important}
@@ -577,6 +580,7 @@
     <div id="ambience"><i class="wisp"></i><i class="wisp"></i><i class="wisp"></i></div>
   </div>
   <div id="stillLayer"><img id="stillImage" alt=""></div>
+  <div id="timeFade" aria-hidden="true"></div>
   <div id="utilityBar">
     <button id="optionsBtn" class="top-button"><span class="tool-icon">⚙</span><span>設定</span></button>
     <button id="logBtn" class="top-button"><span class="tool-icon">≡</span><span>LOG</span></button>
@@ -854,7 +858,7 @@ const story = [
  {n:"ジューン",t:"助かった。大学前の通りは避けたほうがいいぞ。展示会の搬入車が並び始めてる。",correct:"助かった。大学前の通りは避けたほうがいいぞ。展示会の搬入車が並び始めてる。",wrong:"目は覚めそうだ。大学前の通りは避けたほうがいいぞ。展示会の搬入車が並び始めてる。"},
  {n:"ロウ",t:"もう準備してるんですか？"},
  {n:"ジューン",t:"二週間後だろ？　作る連中には、もう二週間しかない。"},
- {show:["rowan"],n:"",t:"午前0時。展示会の応募受付が終了した。",time:"00:00"},
+ {show:["rowan"],n:"",t:"午前0時。展示会の応募受付が終了した。",time:"00:00",timeFade:true},
  {n:"店主",t:"出さなかったんだね。"},
  {n:"ロウ",t:"次は、ちゃんと作ってから出します。"},
  {n:"",t:"雨は、まだ止まない。\nロウのフォルダに、新しいファイルが一つ増えた。\n\nnext_time_final"},
@@ -862,8 +866,8 @@ const story = [
  {day:2,title:"王の帰郷",time:"22:32"},
  {n:"",t:"翌晩。雨は細くなったが、山から下りてくる風は冷たい。"},
  {show:["reiji"],n:"レイジ",t:"半年ぶりだな、店主。まだ潰れてなくて安心したぜ。"},
- {n:"店主",t:"その椅子を置いてくれる客が、ほかにいないからね。"},
- {n:"レイジ",t:"ハッ。なら、いつものより苦くて重いコーヒーを寄越せ。"},
+ {n:"店主",t:"君専用の特注椅子に座れる客が、ほかにいなくてね。処分もできない。"},
+ {n:"レイジ",t:"ハッ。いつもの苦くて重いコーヒーを寄越せ。"},
  {n:"店主",t:"帰って早々、ずいぶん疲れてるね。"},
  {n:"レイジ",t:"余計な観察はいい。作れ。"},
  {order:{who:"レイジ",type:"drink",request:"苦くて重い、スパイス入りのコーヒー",target:"drink|coffee|cocoa,spice"}},
@@ -890,7 +894,7 @@ const story = [
  {n:"ロウ",t:"できれば、心拍数が普通になるやつを……。"},
  {order:{who:"ロウ",type:"drink",request:"しょうがとスパイスの温かい紅茶",target:"drink|tea|ginger,spice"}},
  {n:"ロウ",t:"少し戻ってきました。心臓が。",correct:"少し戻ってきました。心臓が。",wrong:"刺激はありますね。別の意味で目が覚めました。"},
- {n:"レイジ",t:"お前、昨日からその画面を睨んでるだけか？"},
+ {n:"レイジ",t:"お前、その企画書を睨んでるだけか？ゲームだろ？"},
  {n:"ロウ",t:"企画を整理してるんです。百二十ページあって……。"},
  {n:"レイジ",t:"見せろ。",still:"day2-king-low-angle"},
  {n:"ロウ",t:"えっ、まだ途中で――"},
@@ -927,7 +931,7 @@ const story = [
  {n:"ジューン",t:"“でも”は余計だな、レイジ。"},
  {n:"ジューン",t:"店主、昨夜と同じ持ち帰りを頼む。"},
  {order:{who:"ジューン",type:"drink",request:"苦くて甘い、夜明けまで保つコーヒー",target:"drink|coffee|cocoa,honey"}},
- {n:"ジューン",t:"ありがとう。ロウ、出すだけなら十二時間もいらないぞ。",correct:"ありがとう。ロウ、出すだけなら十二時間もいらないぞ。",wrong:"今夜はこれで走ってみるよ。ロウ、出すだけなら十二時間もいらないぞ。"},
+ {n:"ジューン",t:"コーヒーをありがとう。\nロウ、出すだけなら十二時間もいらないぞ。",correct:"ありがとう。ロウ、出すだけなら十二時間もいらないぞ。",wrong:"今夜はこれで走ってみるよ。ロウ、出すだけなら十二時間もいらないぞ。"},
  {show:["reiji","rowan"],n:"レイジ",t:"二週間で一本作れ。世界を作るな。一個、遊べるもんを作れ。"},
  {n:"ロウ",t:"……採用されなかったら？"},
  {n:"レイジ",t:"応募しなかった奴と同じ場所に戻るだけだ。失うもんがあるか？"},
@@ -2187,6 +2191,20 @@ function transitionCast(next,speaker,node){
   setTimeout(()=>{if(token!==sceneToken)return;entranceBusy=false;$("game").classList.remove("entrance-lock");render()},changeDelay+650);
   return true;
 }
+function transitionTimeFade(node){
+  if(!node.timeFade||node._timeFadeDone)return false;
+  node._timeFadeDone=true;entranceBusy=true;$("game").classList.add("entrance-lock");
+  $("timeFade").classList.add("show");
+  const token=sceneToken;
+  setTimeout(()=>{
+    if(token!==sceneToken)return;
+    visible=[...(node.show||[])];actors(visible,node.n);
+    clearStill();entranceBusy=false;$("game").classList.remove("entrance-lock");
+    render();
+    requestAnimationFrame(()=>$("timeFade").classList.remove("show"));
+  },760);
+  return true;
+}
 function updateCamera(name){
   const world=$("world"),ids={ロウ:"rowan",マーラ:"mara",ジューン:"june",レイジ:"reiji",カイ:"kai",テオ:"teo",エルシー:"elsie",レクター:"nessa"};
   let pan=0,zoom=1.025;
@@ -2345,7 +2363,7 @@ function resetSceneState(){
   endingObserver?.disconnect();endingUserPaused=false;
   $("mix").classList.remove("show");$("book").classList.remove("show");$("logOverlay").classList.remove("show");
   $("optionsOverlay").classList.remove("show");$("loadOverlay").classList.remove("show");$("end").classList.remove("show","rolling","paused");
-  $("game").classList.remove("mixing","entrance-lock");$("dayTransition").classList.remove("show","epilogue");
+  $("game").classList.remove("mixing","entrance-lock");$("dayTransition").classList.remove("show","epilogue");$("timeFade").classList.remove("show");
 }
 function returnToTitle(){
   resetSceneState();gameStarted=false;document.body.classList.remove("title-options");
@@ -2363,7 +2381,7 @@ function beginGame(saved=null){
     step=0;currentDay=1;routeFlags={};
     localStorage.setItem("smokemokeRoutes","{}");localStorage.removeItem("smokemokeSave");localStorage.removeItem("smokemokeDaySaves");
   }
-  story.forEach(node=>{delete node._castDone;delete node._entered});
+  story.forEach(node=>{delete node._castDone;delete node._entered;delete node._timeFadeDone});
   renderBook();render();
 }
 function endingOutcome(id){
@@ -2465,6 +2483,7 @@ function render(){
     reshuffleMusicForDay();
     return;
   }
+  if(transitionTimeFade(node))return;
   if(node.show){
     if(transitionCast(node.show,node.n,node))return;
   } else actors(visible,node.n);
