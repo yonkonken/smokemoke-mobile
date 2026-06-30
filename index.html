@@ -114,11 +114,6 @@
     .music-controls button.active{color:#ff879f;border-color:#b94d70;background:#392033}
     .music-foot{display:flex;align-items:center;gap:8px;margin-top:10px;color:#8f8998;font-size:11px}
     #musicVolume{width:92px;accent-color:#d88b79}
-    .debug-options{margin-top:24px;padding-top:16px;border-top:1px solid #3e3948}
-    .debug-options h3{margin:0 0 10px;color:#777181;font-size:11px;letter-spacing:3px}
-    #debugDays{display:grid;grid-template-columns:repeat(6,minmax(38px,1fr));gap:6px;max-width:500px}
-    #debugDays button{height:30px;padding:0;border:1px solid #50495e;background:#1b1926;color:#aaa2b2;cursor:pointer;font-size:11px}
-    #debugDays button:hover{color:#f0c87a;border-color:#a97d58}
     .overlay{position:absolute;z-index:10;inset:0;background:#080a12ee;padding:5%;display:none}
     .overlay.show{display:block}
     .modal{height:100%;border:4px solid var(--line);background:#151522;padding:22px;overflow:auto}
@@ -297,7 +292,7 @@
     #stillImage{width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated}
     #stillLayer:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 55px #05070d88;pointer-events:none}
     #game.ui-hidden #dialogueBubble,#game.ui-hidden #utilityBar,#game.ui-hidden #bottomTools,#game.ui-hidden #soundtrackBtn,#game.ui-hidden #musicPlayer,
-    #game.ui-hidden #debugDays,#game.ui-hidden #book,#game.ui-hidden #logOverlay,#game.ui-hidden #optionsOverlay,#game.ui-hidden #loadOverlay,
+    #game.ui-hidden #book,#game.ui-hidden #logOverlay,#game.ui-hidden #optionsOverlay,#game.ui-hidden #loadOverlay,
     #game.ui-hidden #toast{opacity:0!important;pointer-events:none!important}
     #game.ui-hidden{cursor:zoom-out}
     #titleScreen{position:absolute;z-index:50;inset:0;overflow:hidden;background:#070a11;color:#eee7da;
@@ -664,13 +659,6 @@
     <div class="option-row"><strong>SE</strong><button id="optionSeMute">ON</button><div id="optionSeSteps" class="volume-steps" aria-label="SE音量"><button data-volume="0">0</button><button data-volume="25">25</button><button data-volume="50">50</button><button data-volume="75">75</button><button data-volume="100">100</button></div><span id="optionSeValue">75</span></div>
     <div class="option-row"><strong>TEXT</strong><input id="optionTextSpeed" type="range" min="1" max="6" value="4"><span id="optionTextSpeedValue">4</span></div>
     <div class="option-actions"><button id="optionLoadBtn">ロードする</button><button id="optionTitleBtn">タイトル画面に戻る</button></div>
-    <div class="debug-options"><h3>DEBUG — DAY JUMP</h3>
-      <nav id="debugDays" aria-label="デバッグ日付ジャンプ">
-        <button data-day="1">D1</button><button data-day="2">D2</button><button data-day="3">D3</button><button data-day="4">D4</button>
-        <button data-day="5">D5</button><button data-day="6">D6</button><button data-day="7">D7</button><button data-day="8">D8</button>
-        <button data-day="9">D9</button><button data-day="10">D10</button><button data-day="11">D11</button><button data-day="12">D12</button>
-      </nav>
-    </div>
   </div></section>
   <section id="loadOverlay" class="overlay"><div class="modal"><button class="close" id="loadClose">閉じる</button>
     <h2>ロード</h2><p>到達済みの日の新聞画面から再開します。</p><div id="loadDayList"></div>
@@ -2706,18 +2694,6 @@ $("game").addEventListener("wheel",event=>{
   event.preventDefault();openLog();
 },{passive:false});
 updateAudioOptions();
-$("debugDays").querySelectorAll("button").forEach(button=>button.onclick=()=>{
-  playSE("select",.35);
-  const day=Number(button.dataset.day),target=story.findIndex(node=>node.day===day);
-  if(target<0)return;
-  gameStarted=true;$("titleScreen").classList.add("hidden");document.body.classList.remove("title-options");
-  story.forEach(node=>{delete node._castDone;delete node._entered});
-  sceneToken++;entranceBusy=false;visible=[];actors([],"");step=target;
-  clearStill();toggleUI(false);
-  $("mix").classList.remove("show");$("book").classList.remove("show");$("logOverlay").classList.remove("show");$("optionsOverlay").classList.remove("show");$("loadOverlay").classList.remove("show");$("end").classList.remove("show");
-  $("game").classList.remove("mixing","entrance-lock");$("dayTransition").classList.remove("show");
-  render();
-});
 const legacySave=JSON.parse(localStorage.getItem("smokemokeSave")||"null");
 if(!Object.keys(getDaySaves()).length&&legacySave?.currentDay){
   localStorage.setItem("smokemokeDaySaves",JSON.stringify({[legacySave.currentDay]:{currentDay:legacySave.currentDay,routeFlags:legacySave.routeFlags||{},updatedAt:legacySave.updatedAt||Date.now()}}));
